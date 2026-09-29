@@ -1,4 +1,4 @@
-module github.com/privateerproj/privateer
+module github.com/privateerproj/pvtr
 
 go 1.26.4
 

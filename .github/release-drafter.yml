@@ -32,11 +32,13 @@ categories:
     label: "performance"
 change-template: "- $TITLE @$AUTHOR (#$NUMBER)"
 version-resolver:
+  # Pre-1.0, "breaking" resolves to minor: by convention a 0.x minor bump
+  # signals a breaking change. Move it back under major at 1.0.
   major:
-    labels:
-      - "breaking"
+    labels: []
   minor:
     labels:
+      - "breaking"
       - "feature"
       - "enhancement"
   patch:
