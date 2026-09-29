@@ -6,7 +6,7 @@ package main
 import (
 	"runtime/debug"
 
-	"github.com/privateerproj/privateer/cmd"
+	"github.com/privateerproj/pvtr/cmd"
 )
 
 var (
