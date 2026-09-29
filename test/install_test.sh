@@ -392,7 +392,7 @@ test_defaults_to_latest_release() {
     trap 'rm -rf "$work_dir"' RETURN
 
     assert_equals "$(run_in_sandbox "$work_dir" 'release_base_url latest')" \
-        "https://github.com/privateerproj/privateer/releases/latest/download"
+        "https://github.com/privateerproj/pvtr/releases/latest/download"
 }
 
 test_pins_requested_version() {
@@ -400,7 +400,7 @@ test_pins_requested_version() {
     trap 'rm -rf "$work_dir"' RETURN
 
     assert_equals "$(run_in_sandbox "$work_dir" 'release_base_url v0.22.0')" \
-        "https://github.com/privateerproj/privateer/releases/download/v0.22.0"
+        "https://github.com/privateerproj/pvtr/releases/download/v0.22.0"
 }
 
 test_normalizes_version_without_v_prefix() {
@@ -408,7 +408,7 @@ test_normalizes_version_without_v_prefix() {
     trap 'rm -rf "$work_dir"' RETURN
 
     assert_equals "$(run_in_sandbox "$work_dir" 'release_base_url 0.22.0')" \
-        "https://github.com/privateerproj/privateer/releases/download/v0.22.0"
+        "https://github.com/privateerproj/pvtr/releases/download/v0.22.0"
 }
 
 test_version_flag_reaches_the_download_url() {

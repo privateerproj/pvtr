@@ -2,7 +2,7 @@
 
 set -euo pipefail
 
-REPO="privateerproj/privateer"
+REPO="privateerproj/pvtr"
 DEFAULT_INSTALL_DIR="$HOME/.privateer/bin"
 DEFAULT_VERSION="latest"
 
