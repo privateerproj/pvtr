@@ -28,14 +28,14 @@ brew install privateerproj/tap/pvtr
 #### Option 2: Install via Script
 
 ```bash
-/bin/bash -c "$(curl -sSL https://raw.githubusercontent.com/privateerproj/privateer/main/install.sh)"
+/bin/bash -c "$(curl -sSL https://raw.githubusercontent.com/privateerproj/pvtr/main/install.sh)"
 ```
 
 Installs the latest release to `~/.privateer/bin`, verifying its checksum before
 installing. Pass flags after `--`:
 
 ```bash
-/bin/bash -c "$(curl -sSL https://raw.githubusercontent.com/privateerproj/privateer/main/install.sh)" -- -p /usr/local/bin -y
+/bin/bash -c "$(curl -sSL https://raw.githubusercontent.com/privateerproj/pvtr/main/install.sh)" -- -p /usr/local/bin -y
 ```
 
 | Flag | Effect |
@@ -49,7 +49,7 @@ installing. Pass flags after `--`:
 version to keep CI reproducible:
 
 ```bash
-PVTR_VERSION=v0.22.0 /bin/bash -c "$(curl -sSL https://raw.githubusercontent.com/privateerproj/privateer/main/install.sh)" -- -p /usr/local/bin -y
+PVTR_VERSION=v0.22.0 /bin/bash -c "$(curl -sSL https://raw.githubusercontent.com/privateerproj/pvtr/main/install.sh)" -- -p /usr/local/bin -y
 ```
 
 Without `-y` the script asks before editing your shell config, and prints the
@@ -59,13 +59,13 @@ Installing to a directory you do not own (such as `/usr/local/bin`) requires
 
 #### Option 3: Download from Releases
 
-Download the latest release from [GitHub Releases](https://github.com/privateerproj/privateer/releases).
+Download the latest release from [GitHub Releases](https://github.com/privateerproj/pvtr/releases).
 
 #### Option 4: Build from Source
 
 ```bash
-git clone https://github.com/privateerproj/privateer.git
-cd privateer
+git clone https://github.com/privateerproj/pvtr.git
+cd pvtr
 go mod tidy
 make build
 ```
@@ -82,9 +82,9 @@ To review the plugins you have installed, run `pvtr list -a`.
 
 ## Contributing
 
-We welcome contributions! See our [Contributing Guidelines](https://github.com/privateerproj/privateer?tab=contributing-ov-file) for details.
+We welcome contributions! See our [Contributing Guidelines](https://github.com/privateerproj/pvtr?tab=contributing-ov-file) for details.
 
-All contributions are covered by the [Apache 2 License](https://github.com/privateerproj/privateer?tab=Apache-2.0-1-ov-file) at the time the pull request is opened, and all community interactions are governed by our [Code of Conduct](https://github.com/privateerproj/privateer?tab=coc-ov-file).
+All contributions are covered by the [Apache 2 License](https://github.com/privateerproj/pvtr?tab=Apache-2.0-1-ov-file) at the time the pull request is opened, and all community interactions are governed by our [Code of Conduct](https://github.com/privateerproj/pvtr?tab=coc-ov-file).
 
 ### Local Development Prerequisites
 
@@ -127,7 +127,7 @@ privateer/
 
 ## Security
 
-For vulnerability reporting, please reference our [Security Policy](https://github.com/privateerproj/privateer?tab=security-ov-file). For security questions, please search our closed issues and open a new issue if your question has not yet been answered.
+For vulnerability reporting, please reference our [Security Policy](https://github.com/privateerproj/pvtr?tab=security-ov-file). For security questions, please search our closed issues and open a new issue if your question has not yet been answered.
 
 ## Helpful Links
 
