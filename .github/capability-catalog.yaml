@@ -1,0 +1,80 @@
+---
+title: Privateer CLI Capabilities
+metadata:
+  id: PrivProj.CLI.CAPS
+  type: CapabilityCatalog
+  gemara-version: "1.5.0"
+  description: Capability catalog for Privateer CLI
+  version: 2026.Feb.28
+  author:
+    id: pvtr-maintainers
+    name: Privateer Maintainer Group
+    type: Human
+  mapping-references:
+    - id: CCC
+      title: Common Cloud Controls Core
+      version: v2025.10
+      url: https://github.com/finos/common-cloud-controls/releases/download/v2025.10/CCC.Core_v2025.10.yaml
+      description: |
+        Foundational repository of reusable security controls, capabilities,
+        and threat models maintained by FINOS.
+
+groups:
+  - id: configuration
+    title: Configuration
+    description: Reading user configuration and managing plugin variables and secrets
+  - id: plugin-management
+    title: Plugin Management
+    description: Discovering and executing plugin binaries
+  - id: scaffolding
+    title: Scaffolding
+    description: Generating new plugin source code from templates
+  - id: output
+    title: Output
+    description: Writing logs and evaluation results
+
+imports:
+  - reference-id: CCC
+    entries:
+      - reference-id: CCC.Core.CP10
+        remarks: Log Publication (Privateer doesn't send logs, but does write to io and file)
+      - reference-id: CCC.Core.CP28
+        remarks: Command-line Interface
+
+capabilities:
+  - id: PrivProj.CLI.CP01
+    title: User Configuration Ingestion
+    description: |
+      Accepts CLI inputs and reads user-provided YAML configuration files to determine
+      runtime behavior for the core CLI and selected plugins
+    group: configuration
+  - id: PrivProj.CLI.CP02
+    title: Multi-plugin Variable Handling
+    description: Manages configuration variables and secrets for all plugins that are executed
+    group: configuration
+  - id: PrivProj.CLI.CP03
+    title: Plugin Enumeration
+    description: |
+      Detects plugins available on the local filesystem by searching a well-known
+      or user-defined location
+    group: plugin-management
+  - id: PrivProj.CLI.CP04
+    title: Plugin Execution
+    description: |
+      Executes one or more plugins as independent sub-processes and directs output
+      to the terminal or filesystem
+    group: plugin-management
+  - id: PrivProj.CLI.CP05
+    title: Plugin Generation
+    description: |
+      Automates the generation of plugin scaffolding from Gemara Control Catalogs
+      using the `generate-plugin` command
+    group: scaffolding
+  - id: PrivProj.CLI.CP06
+    title: Configurable Log Output
+    description: Allows users to adjust the verbosity and location of log outputs
+    group: output
+  - id: PrivProj.CLI.CP07
+    title: Configurable Result Output
+    description: Allows users to configure the output location for runtime execution results
+    group: output

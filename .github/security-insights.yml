@@ -1,7 +1,7 @@
 header:
   schema-version: 2.2.0
-  last-updated: "2026-02-15"
-  last-reviewed: "2026-02-15"
+  last-updated: "2026-10-01"
+  last-reviewed: "2026-10-01"
   url: https://github.com/privateerproj/pvtr/blob/main/.github/security-insights.yml
   project-si-source: https://raw.githubusercontent.com/privateerproj/.github/refs/heads/main/.github/security-insights.yml
   comment: |
@@ -38,8 +38,11 @@ repository:
   security:
     assessments:
       self:
+        evidence: https://github.com/privateerproj/pvtr/blob/main/.github/threat-assessment.yaml
+        date: "2026-02-28"
         comment: |
-          A self assessment has not been published for this repo.
+          Gemara v1.5.0 threat catalog for the Privateer CLI, written by the Privateer Maintainer Group.
+          Threats live in .github/threat-assessment.yaml and reference the capabilities in .github/capability-catalog.yaml.
     champions:
       - name: Jason Meridth
         primary: true
