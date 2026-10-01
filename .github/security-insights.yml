@@ -43,6 +43,11 @@ repository:
         comment: |
           Gemara v1.5.0 threat catalog for the Privateer CLI, written by the Privateer Maintainer Group.
           Threats live in .github/threat-assessment.yaml and reference the capabilities in .github/capability-catalog.yaml.
+      third-party:
+        - name: OpenSSF Best Practices OSPS Baseline
+          evidence: https://www.bestpractices.dev/projects/15145/baseline-1
+          date: "2026-10-01"
+          comment: OSPS Baseline Level 1 (criteria v2026.08.28), self-reported on bestpractices.dev with autodetected answers.
     champions:
       - name: Jason Meridth
         primary: true
