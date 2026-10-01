@@ -130,7 +130,9 @@ privateer/
 
 ## Security
 
-For vulnerability reporting, please reference our [Security Policy](https://github.com/privateerproj/pvtr?tab=security-ov-file). For security questions, please search our closed issues and open a new issue if your question has not yet been answered.
+Please do not open public issues for vulnerabilities or security questions. Report them privately through [GitHub private vulnerability reporting](https://github.com/privateerproj/pvtr/security/advisories/new), and see our [Security Policy](https://github.com/privateerproj/pvtr?tab=security-ov-file) for the full process.
+
+See [CRA-READINESS.md](CRA-READINESS.md) for how this project voluntarily documents its security practices.
 
 ## Helpful Links
 

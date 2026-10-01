@@ -11,6 +11,9 @@ categories:
   - title: "💥 Breaking Changes"
     labels:
       - "breaking"
+  - title: "🔒 Security"
+    labels:
+      - "security"
   - title: "🚀 Features"
     labels:
       - "feature"

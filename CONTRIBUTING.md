@@ -4,6 +4,8 @@ Thank you for your interest in contributing to Privateer! This document covers e
 
 All contributions are covered by the [Apache 2 License](https://github.com/privateerproj/pvtr?tab=Apache-2.0-1-ov-file) at the time the pull request is opened. All community interactions are governed by our [Code of Conduct](https://github.com/privateerproj/pvtr?tab=coc-ov-file).
 
+All changes follow the project's [secure development practices](https://github.com/privateerproj/.github/blob/main/.github/SECURITY.md#secure-development).
+
 ---
 
 ## Table of Contents

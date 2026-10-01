@@ -1,6 +1,9 @@
 blank_issues_enabled: true
 
 contact_links:
+  - name: Report a security vulnerability
+    url: https://github.com/privateerproj/.github/blob/main/.github/SECURITY.md
+    about: Do not open a public issue. Follow the security policy to report privately.
   - name: Ask a question by filing an issue
     url: https://github.com/privateerproj/pvtr/issues/new/choose
     about: Ask a question by filing an issue
