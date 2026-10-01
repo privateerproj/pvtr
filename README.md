@@ -1,5 +1,8 @@
 # pvtr
 
+[![OSPS Baseline](https://github.com/privateerproj/pvtr/actions/workflows/osps-security-assessment.yaml/badge.svg)](https://github.com/privateerproj/pvtr/actions/workflows/osps-security-assessment.yaml)
+[![OpenSSF Best Practices](https://www.bestpractices.dev/projects/15145/baseline)](https://www.bestpractices.dev/projects/15145/baseline-1)
+
 **pvtr** is a validation framework that simplifies infrastructure testing and compliance validation. Built with infrastructure engineers in mind, pvtr helps accelerate security and compliance validation of any software asset.
 
 ## Key Features
