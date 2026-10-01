@@ -29,12 +29,12 @@ jobs:
           persist-credentials: false
 
       - name: Open Source Project Security Baseline Scanner
-        uses: revanite-io/osps-baseline-action@6ba0e05ce6566af82fd77bb9356ae8387027f32e # v1.5.0
+        uses: revanite-io/osps-baseline-action@1af7ff8b44af83f120b20cc5f63b877286849257 # v1.5.2
         with:
           owner: ${{ github.repository_owner }}
           repo: ${{ github.event.repository.name }}
           token: ${{ github.token }}
-          catalog: "osps-baseline-2026-02"
+          catalog: "osps-baseline-2026-08"
           upload-sarif: "true"
 
       - name: Upload Assessment Results
