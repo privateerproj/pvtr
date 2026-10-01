@@ -1,6 +1,6 @@
-# Contributing to Priveteer(pvtr)
+# Contributing to Privateer (pvtr)
 
-Thank you for your interest in contributing to Priveteer! This document covers everything that you will need to set up and run the project locally, understand the project layout, run the tests, and submit changes.
+Thank you for your interest in contributing to Privateer! This document covers everything that you will need to set up and run the project locally, understand the project layout, run the tests, and submit changes.
 
 All contributions are covered by the [Apache 2 License](https://github.com/privateerproj/pvtr?tab=Apache-2.0-1-ov-file) at the time the pull request is opened. All community interactions are governed by our [Code of Conduct](https://github.com/privateerproj/pvtr?tab=coc-ov-file).
 
