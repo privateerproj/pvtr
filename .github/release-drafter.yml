@@ -9,47 +9,61 @@ template: |
 
 categories:
   - title: "💥 Breaking Changes"
-    labels:
-      - "breaking"
+    when:
+      labels:
+        - "breaking"
+  # exclusive: a security fix lists here only, not again under a later
+  # category such as Bug Fixes. It can still also appear under Breaking.
   - title: "🔒 Security"
-    labels:
-      - "security"
+    exclusive: true
+    when:
+      labels:
+        - "security"
   - title: "🚀 Features"
-    labels:
-      - "feature"
-      - "enhancement"
+    when:
+      labels:
+        - "feature"
+        - "enhancement"
   - title: "🐛 Bug Fixes"
-    labels:
-      - "fix"
-      - "bugfix"
-      - "bug"
+    when:
+      labels:
+        - "fix"
+        - "bugfix"
+        - "bug"
   - title: "🧰 Maintenance"
-    labels:
-      - "infrastructure"
-      - "automation"
-      - "documentation"
-      - "dependencies"
-      - "maintenance"
-      - "revert"
+    when:
+      labels:
+        - "infrastructure"
+        - "automation"
+        - "documentation"
+        - "dependencies"
+        - "maintenance"
+        - "revert"
   - title: "🏎 Performance"
-    label: "performance"
-change-template: "- $TITLE @$AUTHOR (#$NUMBER)"
-version-resolver:
+    when:
+      label: "performance"
+  # Version resolution: the highest matching increment wins.
   # Pre-1.0, "breaking" resolves to minor: by convention a 0.x minor bump
-  # signals a breaking change. Move it back under major at 1.0.
-  major:
-    labels: []
-  minor:
-    labels:
-      - "breaking"
-      - "feature"
-      - "enhancement"
-  patch:
-    labels:
-      - "fix"
-      - "documentation"
-      - "maintenance"
-  default: patch
+  # signals a breaking change. There is no major category until 1.0; at 1.0,
+  # add a "major" category for "breaking" and drop it from minor.
+  - type: "version-resolver"
+    semver-increment: "minor"
+    when:
+      labels:
+        - "breaking"
+        - "feature"
+        - "enhancement"
+  - type: "version-resolver"
+    semver-increment: "patch"
+    when:
+      labels:
+        - "fix"
+        - "documentation"
+        - "maintenance"
+  # Fallback when no other version-resolver matches (was default: patch)
+  - type: "version-resolver"
+    semver-increment: "patch"
+change-template: "- $TITLE @$AUTHOR (#$NUMBER)"
 autolabeler:
   - label: "automation"
     title:
