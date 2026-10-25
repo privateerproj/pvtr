@@ -1,9 +1,13 @@
 package cmd
 
 import (
+	"bytes"
 	"path/filepath"
+	"runtime"
 	"strings"
 	"testing"
+
+	"github.com/spf13/viper"
 )
 
 func TestNewCLI_RegistersAllSubcommands(t *testing.T) {
@@ -86,14 +90,16 @@ func TestNewCLI_RegistersHarnessFlags(t *testing.T) {
 }
 
 func TestPersistentPreRun(t *testing.T) {
-	c := NewCLI("1.0.0", "abc123", "2026-01-01T00:00:00Z")
-	c.persistentPreRun(c.rootCmd, []string{})
+	t.Setenv("HOME", t.TempDir())
+	t.Cleanup(viper.Reset)
+	c := &CLI{}
+	c.persistentPreRun(nil, []string{})
 
 	if c.logger == nil {
-		t.Error("expected logger to be non-nil after persistentPreRun")
+		t.Error("expected logger to be initialized after persistentPreRun")
 	}
 	if c.writer == nil {
-		t.Error("expected writer to be non-nil after persistentPreRun")
+		t.Error("expected writer to be initialized after persistentPreRun")
 	}
 }
 
@@ -109,25 +115,26 @@ func TestDefaultBinariesPath(t *testing.T) {
 }
 
 func TestExecute(t *testing.T) {
+	var buf bytes.Buffer
 	c := NewCLI("1.0.0", "abc123", "2026-01-01T00:00:00Z")
+	c.rootCmd.SetOut(&buf)
+	c.rootCmd.SetErr(&buf)
 	c.rootCmd.SetArgs([]string{"--help"})
 	c.Execute()
-}
 
-func TestSetupCloseHandler(t *testing.T) {
-	c := NewCLI("1.0.0", "abc123", "2026-01-01T00:00:00Z")
-	c.setupCloseHandler()
-}
-
-func TestPersistentPreRun_NilWriter(t *testing.T) {
-	c := &CLI{}
-	c.persistentPreRun(nil, []string{})
-	if c.writer == nil {
-		t.Error("expected writer to be initialized when nil")
+	output := buf.String()
+	if !strings.Contains(output, "pvtr root command") {
+		t.Errorf("expected output to contain 'pvtr root command', got: %s", output)
+	}
+	if !strings.Contains(output, "Available Commands:") {
+		t.Errorf("expected output to contain 'Available Commands:', got: %s", output)
 	}
 }
 
 func TestDefaultBinariesPath_NoHome(t *testing.T) {
+	if runtime.GOOS == "windows" {
+		t.Skip("HOME environment variable is not used on Windows")
+	}
 	t.Setenv("HOME", "")
 	path := defaultBinariesPath()
 	expected := filepath.Join(".", ".privateer", "bin")

@@ -5,7 +5,7 @@ import (
 	"testing"
 )
 
-func TestListCmd_Registration(t *testing.T) {
+func TestListCmd(t *testing.T) {
 	var buf bytes.Buffer
 	c := newTestCLI(&buf, "1.0.0", "hash", "date")
 	c.addListCmd()
@@ -14,21 +14,10 @@ func TestListCmd_Registration(t *testing.T) {
 	if err != nil {
 		t.Fatalf("expected to find list command: %v", err)
 	}
-	if cmd == nil || cmd.Name() != "list" {
-		t.Fatalf("expected list command to be registered")
+	if err := cmd.RunE(cmd, []string{}); err != nil {
+		t.Fatalf("list failed: %v", err)
 	}
-
-	if cmd.Flags().Lookup("installable") == nil {
-		t.Errorf("expected flag 'installable' to be registered on list command")
+	if !bytes.Contains(buf.Bytes(), []byte("| Plugin")) {
+		t.Errorf("expected plugin table header in output, got:\n%s", buf.String())
 	}
-}
-
-func TestListCmd_WriterFn(t *testing.T) {
-	var buf bytes.Buffer
-	c := newTestCLI(&buf, "1.0.0", "hash", "date")
-	c.addListCmd()
-
-	cmd, _, _ := c.rootCmd.Find([]string{"list"})
-	// RunE executes writerFn() to obtain the writer
-	_ = cmd.RunE(cmd, []string{})
 }

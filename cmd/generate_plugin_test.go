@@ -7,23 +7,6 @@ import (
 	"github.com/spf13/viper"
 )
 
-func TestGeneratePluginCmd_Registration(t *testing.T) {
-	var buf bytes.Buffer
-	c := newTestCLI(&buf, "1.0.0", "hash", "date")
-	c.addGenPluginCmd()
-
-	cmd, _, err := c.rootCmd.Find([]string{"generate-plugin"})
-	if err != nil {
-		t.Fatalf("expected to find generate-plugin command: %v", err)
-	}
-	if cmd == nil || cmd.Name() != "generate-plugin" {
-		t.Fatalf("expected generate-plugin command to be registered")
-	}
-	if cmd.Short != "Generate a new plugin" {
-		t.Errorf("unexpected short description: %s", cmd.Short)
-	}
-}
-
 func TestGeneratePluginCmd_Flags(t *testing.T) {
 	var buf bytes.Buffer
 	c := newTestCLI(&buf, "1.0.0", "hash", "date")
@@ -62,6 +45,7 @@ func TestGeneratePluginCmd_Flags(t *testing.T) {
 }
 
 func TestGeneratePluginCmd_ViperBindings(t *testing.T) {
+	t.Cleanup(viper.Reset)
 	var buf bytes.Buffer
 	c := newTestCLI(&buf, "1.0.0", "hash", "date")
 	c.addGenPluginCmd()

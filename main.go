@@ -21,33 +21,42 @@ var (
 	BuiltAt string
 )
 
+func parseVCSInfo(settings []debug.BuildSetting) (commit, builtAt, postfix string) {
+	for _, setting := range settings {
+		switch setting.Key {
+		case "vcs.revision":
+			commit = setting.Value
+		case "vcs.time":
+			builtAt = setting.Value
+		case "vcs.modified":
+			postfix = "-dev"
+		}
+	}
+	return
+}
+
 func setVCSInfo() {
 	info, ok := debug.ReadBuildInfo()
 	if !ok {
 		return
 	}
+	GitCommitHash, BuiltAt, VersionPostfix = parseVCSInfo(info.Settings)
+}
 
-	for _, setting := range info.Settings {
-	   switch setting.Key {
-	   case "vcs.revision":
-		  GitCommitHash = setting.Value
-	   case "vcs.time":
-		  BuiltAt = setting.Value
-	   case "vcs.modified":
-		  VersionPostfix = "-dev"
-	   }
+// formatVersion returns the version string, defaulting to "edge" if empty and appending any postfix.
+func formatVersion(version, postfix string) string {
+	if version == "" {
+		version = "edge"
 	}
+	return version + postfix
 }
 
 // main is the entry point for the pvtr application.
 // It formats the version string with any postfix and executes the root command.
 func main() {
 	if Version == "" {
-		Version = "edge"
 		setVCSInfo()
 	}
-	if VersionPostfix != "" {
-		Version += VersionPostfix
-	}
+	Version = formatVersion(Version, VersionPostfix)
 	cmd.NewCLI(Version, GitCommitHash, BuiltAt).Execute()
 }
