@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"bytes"
+	"strings"
 	"testing"
 )
 
@@ -17,7 +18,11 @@ func TestPublishCmd_EmptyDistFails(t *testing.T) {
 	if err := cmd.Flags().Set("dist", t.TempDir()); err != nil {
 		t.Fatal(err)
 	}
-	if err := cmd.RunE(cmd, []string{}); err == nil {
+	err = cmd.RunE(cmd, []string{})
+	if err == nil {
 		t.Fatal("expected publish to fail on an empty dist dir")
+	}
+	if !strings.Contains(err.Error(), "loading GoReleaser build") {
+		t.Errorf("expected error to mention 'loading GoReleaser build', got: %v", err)
 	}
 }

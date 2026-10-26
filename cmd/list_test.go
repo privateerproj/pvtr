@@ -6,6 +6,7 @@ import (
 )
 
 func TestListCmd(t *testing.T) {
+	t.Setenv("HOME", t.TempDir())
 	var buf bytes.Buffer
 	c := newTestCLI(&buf, "1.0.0", "hash", "date")
 	c.addListCmd()

@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"bytes"
+	"log"
 	"path/filepath"
 	"runtime"
 	"strings"
@@ -92,6 +93,9 @@ func TestNewCLI_RegistersHarnessFlags(t *testing.T) {
 func TestPersistentPreRun(t *testing.T) {
 	t.Setenv("HOME", t.TempDir())
 	t.Cleanup(viper.Reset)
+	origLogWriter := log.Writer()
+	t.Cleanup(func() { log.SetOutput(origLogWriter) })
+
 	c := &CLI{}
 	c.persistentPreRun(nil, []string{})
 
