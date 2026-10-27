@@ -79,7 +79,7 @@ func TestFormatVersion(t *testing.T) {
 	}
 }
 
-func TestSetVCSInfo_PreservesExistingValues(t *testing.T) {
+func TestSetVCSInfo(t *testing.T) {
 	origGitCommitHash := GitCommitHash
 	origBuiltAt := BuiltAt
 	origVersionPostfix := VersionPostfix
@@ -93,16 +93,35 @@ func TestSetVCSInfo_PreservesExistingValues(t *testing.T) {
 	BuiltAt = "existing-time"
 	VersionPostfix = "-custom"
 
-	setVCSInfo()
+	// 1. Non-empty VCS settings update the global values
+	settings := []debug.BuildSetting{
+		{Key: "vcs.revision", Value: "new-hash"},
+		{Key: "vcs.time", Value: "new-time"},
+		{Key: "vcs.modified", Value: "true"},
+	}
+	setVCSInfo(settings)
 
-	if GitCommitHash != "existing-hash" {
-		t.Errorf("expected GitCommitHash 'existing-hash' to be preserved, got %q", GitCommitHash)
+	if GitCommitHash != "new-hash" {
+		t.Errorf("expected GitCommitHash 'new-hash', got %q", GitCommitHash)
 	}
-	if BuiltAt != "existing-time" {
-		t.Errorf("expected BuiltAt 'existing-time' to be preserved, got %q", BuiltAt)
+	if BuiltAt != "new-time" {
+		t.Errorf("expected BuiltAt 'new-time', got %q", BuiltAt)
 	}
-	if VersionPostfix != "-custom" {
-		t.Errorf("expected VersionPostfix '-custom' to be preserved, got %q", VersionPostfix)
+	if VersionPostfix != "-dev" {
+		t.Errorf("expected VersionPostfix '-dev', got %q", VersionPostfix)
+	}
+
+	// 2. Empty VCS settings preserve the existing values
+	setVCSInfo([]debug.BuildSetting{})
+
+	if GitCommitHash != "new-hash" {
+		t.Errorf("expected GitCommitHash 'new-hash' to be preserved, got %q", GitCommitHash)
+	}
+	if BuiltAt != "new-time" {
+		t.Errorf("expected BuiltAt 'new-time' to be preserved, got %q", BuiltAt)
+	}
+	if VersionPostfix != "-dev" {
+		t.Errorf("expected VersionPostfix '-dev' to be preserved, got %q", VersionPostfix)
 	}
 }
 
@@ -127,6 +146,7 @@ func TestRunMain(t *testing.T) {
 		calledBuiltAt = builtAt
 	}
 
+	// Test 1: Explicit version
 	Version = "1.2.3"
 	VersionPostfix = "-custom"
 	GitCommitHash = "commithash"
@@ -142,5 +162,14 @@ func TestRunMain(t *testing.T) {
 	}
 	if calledBuiltAt != "buildtime" {
 		t.Errorf("expected calledBuiltAt 'buildtime', got %q", calledBuiltAt)
+	}
+
+	// Test 2: Empty version branch (defaults to edge)
+	Version = ""
+	VersionPostfix = "-dev"
+	runMain()
+
+	if calledVersion != "edge-dev" {
+		t.Errorf("expected calledVersion 'edge-dev' for empty Version, got %q", calledVersion)
 	}
 }

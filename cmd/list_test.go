@@ -3,9 +3,13 @@ package cmd
 import (
 	"bytes"
 	"testing"
+
+	"github.com/spf13/viper"
 )
 
 func TestListCmd(t *testing.T) {
+	viper.Reset()
+	t.Cleanup(viper.Reset)
 	t.Setenv("HOME", t.TempDir())
 	var buf bytes.Buffer
 	c := newTestCLI(&buf, "1.0.0", "hash", "date")

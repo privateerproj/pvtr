@@ -37,12 +37,8 @@ func parseVCSInfo(settings []debug.BuildSetting) (commit, builtAt, postfix strin
 	return
 }
 
-func setVCSInfo() {
-	info, ok := debug.ReadBuildInfo()
-	if !ok {
-		return
-	}
-	commit, builtAt, postfix := parseVCSInfo(info.Settings)
+func setVCSInfo(settings []debug.BuildSetting) {
+	commit, builtAt, postfix := parseVCSInfo(settings)
 	if commit != "" {
 		GitCommitHash = commit
 	}
@@ -68,7 +64,10 @@ var executeCLI = func(version, commit, builtAt string) {
 
 func runMain() {
 	if Version == "" {
-		setVCSInfo()
+		info, ok := debug.ReadBuildInfo()
+		if ok {
+			setVCSInfo(info.Settings)
+		}
 	}
 	Version = formatVersion(Version, VersionPostfix)
 	executeCLI(Version, GitCommitHash, BuiltAt)

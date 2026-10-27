@@ -3,6 +3,7 @@ package cmd
 import (
 	"bytes"
 	"log"
+	"os"
 	"path/filepath"
 	"runtime"
 	"strings"
@@ -91,10 +92,20 @@ func TestNewCLI_RegistersHarnessFlags(t *testing.T) {
 }
 
 func TestPersistentPreRun(t *testing.T) {
-	t.Setenv("HOME", t.TempDir())
+	tmpHome := t.TempDir()
+	t.Setenv("HOME", tmpHome)
 	t.Cleanup(viper.Reset)
 	origLogWriter := log.Writer()
 	t.Cleanup(func() { log.SetOutput(origLogWriter) })
+
+	cfgDir := filepath.Join(tmpHome, ".privateer")
+	if err := os.MkdirAll(cfgDir, 0755); err != nil {
+		t.Fatalf("failed to create temp config dir: %v", err)
+	}
+	cfgFile := filepath.Join(cfgDir, "config.yml")
+	if err := os.WriteFile(cfgFile, []byte("loglevel: debug\n"), 0644); err != nil {
+		t.Fatalf("failed to create temp config file: %v", err)
+	}
 
 	c := &CLI{}
 	c.persistentPreRun(nil, []string{})
@@ -104,6 +115,9 @@ func TestPersistentPreRun(t *testing.T) {
 	}
 	if c.writer == nil {
 		t.Error("expected writer to be initialized after persistentPreRun")
+	}
+	if val := viper.GetString("loglevel"); val != "debug" {
+		t.Errorf("expected config value 'debug' to be loaded by ReadConfig, got %q", val)
 	}
 }
 
