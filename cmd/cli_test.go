@@ -1,7 +1,15 @@
 package cmd
 
 import (
+	"bytes"
+	"log"
+	"os"
+	"path/filepath"
+	"runtime"
+	"strings"
 	"testing"
+
+	"github.com/spf13/viper"
 )
 
 func TestNewCLI_RegistersAllSubcommands(t *testing.T) {
@@ -80,5 +88,75 @@ func TestNewCLI_RegistersHarnessFlags(t *testing.T) {
 		if c.rootCmd.PersistentFlags().Lookup(name) == nil {
 			t.Errorf("expected persistent flag %q to be registered, but it was not", name)
 		}
+	}
+}
+
+func TestPersistentPreRun(t *testing.T) {
+	tmpHome := t.TempDir()
+	t.Setenv("HOME", tmpHome)
+	t.Cleanup(viper.Reset)
+	origLogWriter := log.Writer()
+	t.Cleanup(func() { log.SetOutput(origLogWriter) })
+
+	cfgDir := filepath.Join(tmpHome, ".privateer")
+	if err := os.MkdirAll(cfgDir, 0755); err != nil {
+		t.Fatalf("failed to create temp config dir: %v", err)
+	}
+	cfgFile := filepath.Join(cfgDir, "config.yml")
+	if err := os.WriteFile(cfgFile, []byte("loglevel: debug\n"), 0644); err != nil {
+		t.Fatalf("failed to create temp config file: %v", err)
+	}
+
+	c := &CLI{}
+	c.persistentPreRun(nil, []string{})
+
+	if c.logger == nil {
+		t.Error("expected logger to be initialized after persistentPreRun")
+	}
+	if c.writer == nil {
+		t.Error("expected writer to be initialized after persistentPreRun")
+	}
+	if val := viper.GetString("loglevel"); val != "debug" {
+		t.Errorf("expected config value 'debug' to be loaded by ReadConfig, got %q", val)
+	}
+}
+
+func TestDefaultBinariesPath(t *testing.T) {
+	path := defaultBinariesPath()
+	if path == "" {
+		t.Fatal("expected defaultBinariesPath to return a non-empty path")
+	}
+	expectedSuffix := filepath.Join(".privateer", "bin")
+	if !strings.HasSuffix(path, expectedSuffix) {
+		t.Errorf("expected path to end in %q, got %q", expectedSuffix, path)
+	}
+}
+
+func TestExecute(t *testing.T) {
+	var buf bytes.Buffer
+	c := NewCLI("1.0.0", "abc123", "2026-01-01T00:00:00Z")
+	c.rootCmd.SetOut(&buf)
+	c.rootCmd.SetErr(&buf)
+	c.rootCmd.SetArgs([]string{"--help"})
+	c.Execute()
+
+	output := buf.String()
+	if !strings.Contains(output, "pvtr root command") {
+		t.Errorf("expected output to contain 'pvtr root command', got: %s", output)
+	}
+	if !strings.Contains(output, "Available Commands:") {
+		t.Errorf("expected output to contain 'Available Commands:', got: %s", output)
+	}
+}
+
+func TestDefaultBinariesPath_NoHome(t *testing.T) {
+	if runtime.GOOS == "windows" {
+		t.Skip("HOME environment variable is not used on Windows")
+	}
+	t.Setenv("HOME", "")
+	path := defaultBinariesPath()
+	expected := filepath.Join(".", ".privateer", "bin")
+	if path != expected {
+		t.Errorf("expected fallback %q, got %q", expected, path)
 	}
 }

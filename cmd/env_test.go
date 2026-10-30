@@ -11,6 +11,7 @@ import (
 
 	hclog "github.com/hashicorp/go-hclog"
 	"github.com/spf13/cobra"
+	"github.com/spf13/viper"
 )
 
 func newTestCLI(buf *bytes.Buffer, version, commit, buildTime string) *CLI {
@@ -152,5 +153,51 @@ func TestDiscoverPluginNames_FiltersPvtrAndPrivateer(t *testing.T) {
 	}
 	if !strings.Contains(result, "other-tool") {
 		t.Errorf("expected 'other-tool' in result, got: %s", result)
+	}
+}
+
+func TestEnvCmd_ConfigStatusFound(t *testing.T) {
+	t.Cleanup(viper.Reset)
+	tmpDir := t.TempDir()
+	cfgPath := filepath.Join(tmpDir, "config.yml")
+	if err := os.WriteFile(cfgPath, []byte("key: value\n"), 0644); err != nil {
+		t.Fatalf("failed to create temp config file: %v", err)
+	}
+	viper.SetConfigFile(cfgPath)
+
+	var buf bytes.Buffer
+	c := newTestCLI(&buf, "1.0.0", "hash", "date")
+	c.addEnvCmd()
+
+	envCmd, _, _ := c.rootCmd.Find([]string{"env"})
+	envCmd.Run(envCmd, []string{})
+
+	output := buf.String()
+	if !strings.Contains(output, "(found)") {
+		t.Errorf("expected output to contain '(found)', got:\n%s", output)
+	}
+	if !strings.Contains(output, cfgPath) {
+		t.Errorf("expected output to contain config path %q, got:\n%s", cfgPath, output)
+	}
+}
+
+func TestEnvCmd_ConfigStatusNotFound(t *testing.T) {
+	t.Cleanup(viper.Reset)
+	nonExistentPath := filepath.Join(t.TempDir(), "nonexistent.yml")
+	viper.SetConfigFile(nonExistentPath)
+
+	var buf bytes.Buffer
+	c := newTestCLI(&buf, "1.0.0", "hash", "date")
+	c.addEnvCmd()
+
+	envCmd, _, _ := c.rootCmd.Find([]string{"env"})
+	envCmd.Run(envCmd, []string{})
+
+	output := buf.String()
+	if !strings.Contains(output, "(not found)") {
+		t.Errorf("expected output to contain '(not found)', got:\n%s", output)
+	}
+	if !strings.Contains(output, nonExistentPath) {
+		t.Errorf("expected output to contain config path %q, got:\n%s", nonExistentPath, output)
 	}
 }
