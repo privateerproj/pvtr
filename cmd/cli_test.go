@@ -94,6 +94,8 @@ func TestNewCLI_RegistersHarnessFlags(t *testing.T) {
 func TestPersistentPreRun(t *testing.T) {
 	tmpHome := t.TempDir()
 	t.Setenv("HOME", tmpHome)
+	t.Setenv("USERPROFILE", tmpHome)
+	t.Setenv("PVTR_LOGLEVEL", "")
 	t.Cleanup(viper.Reset)
 	origLogWriter := log.Writer()
 	t.Cleanup(func() { log.SetOutput(origLogWriter) })

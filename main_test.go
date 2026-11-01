@@ -127,12 +127,14 @@ func TestSetVCSInfo(t *testing.T) {
 
 func TestRunMain(t *testing.T) {
 	origExecuteCLI := executeCLI
+	origReadBuildInfo := readBuildInfo
 	origVersion := Version
 	origVersionPostfix := VersionPostfix
 	origGitCommitHash := GitCommitHash
 	origBuiltAt := BuiltAt
 	defer func() {
 		executeCLI = origExecuteCLI
+		readBuildInfo = origReadBuildInfo
 		Version = origVersion
 		VersionPostfix = origVersionPostfix
 		GitCommitHash = origGitCommitHash
@@ -146,30 +148,51 @@ func TestRunMain(t *testing.T) {
 		calledBuiltAt = builtAt
 	}
 
-	// Test 1: Explicit version
-	Version = "1.2.3"
-	VersionPostfix = "-custom"
-	GitCommitHash = "commithash"
-	BuiltAt = "buildtime"
+	t.Run("explicit version", func(t *testing.T) {
+		Version = "1.2.3"
+		VersionPostfix = "-custom"
+		GitCommitHash = "commithash"
+		BuiltAt = "buildtime"
 
-	runMain()
+		runMain()
 
-	if calledVersion != "1.2.3-custom" {
-		t.Errorf("expected calledVersion '1.2.3-custom', got %q", calledVersion)
-	}
-	if calledCommit != "commithash" {
-		t.Errorf("expected calledCommit 'commithash', got %q", calledCommit)
-	}
-	if calledBuiltAt != "buildtime" {
-		t.Errorf("expected calledBuiltAt 'buildtime', got %q", calledBuiltAt)
-	}
+		if calledVersion != "1.2.3-custom" {
+			t.Errorf("expected calledVersion '1.2.3-custom', got %q", calledVersion)
+		}
+		if calledCommit != "commithash" {
+			t.Errorf("expected calledCommit 'commithash', got %q", calledCommit)
+		}
+		if calledBuiltAt != "buildtime" {
+			t.Errorf("expected calledBuiltAt 'buildtime', got %q", calledBuiltAt)
+		}
+	})
 
-	// Test 2: Empty version branch (defaults to edge)
-	Version = ""
-	VersionPostfix = "-dev"
-	runMain()
+	t.Run("empty version with build info", func(t *testing.T) {
+		readBuildInfo = func() (*debug.BuildInfo, bool) {
+			return &debug.BuildInfo{
+				Settings: []debug.BuildSetting{
+					{Key: "vcs.revision", Value: "mock-hash"},
+					{Key: "vcs.time", Value: "mock-time"},
+					{Key: "vcs.modified", Value: "true"},
+				},
+			}, true
+		}
 
-	if calledVersion != "edge-dev" {
-		t.Errorf("expected calledVersion 'edge-dev' for empty Version, got %q", calledVersion)
-	}
+		Version = ""
+		VersionPostfix = ""
+		GitCommitHash = ""
+		BuiltAt = ""
+
+		runMain()
+
+		if calledVersion != "edge-dev" {
+			t.Errorf("expected calledVersion 'edge-dev' for empty Version, got %q", calledVersion)
+		}
+		if calledCommit != "mock-hash" {
+			t.Errorf("expected calledCommit 'mock-hash', got %q", calledCommit)
+		}
+		if calledBuiltAt != "mock-time" {
+			t.Errorf("expected calledBuiltAt 'mock-time', got %q", calledBuiltAt)
+		}
+	})
 }

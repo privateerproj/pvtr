@@ -58,13 +58,16 @@ func formatVersion(version, postfix string) string {
 	return version + postfix
 }
 
-var executeCLI = func(version, commit, builtAt string) {
-	cmd.NewCLI(version, commit, builtAt).Execute()
-}
+var (
+	readBuildInfo = debug.ReadBuildInfo
+	executeCLI    = func(version, commit, builtAt string) {
+		cmd.NewCLI(version, commit, builtAt).Execute()
+	}
+)
 
 func runMain() {
 	if Version == "" {
-		info, ok := debug.ReadBuildInfo()
+		info, ok := readBuildInfo()
 		if ok {
 			setVCSInfo(info.Settings)
 		}
