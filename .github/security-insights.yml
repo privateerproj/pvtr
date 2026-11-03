@@ -77,15 +77,15 @@ repository:
           repository's security settings (OSPS-BR-07.01). Alerts are visible
           to maintainers only.
         results:
-          adhoc:
+          ci:
             name: Secret scanning alerts
             predicate-uri: https://docs.github.com/en/code-security/secret-scanning/about-secret-scanning
             location: https://github.com/privateerproj/pvtr/security/secret-scanning
             comment: |
               Alerts are visible to maintainers only.
         integration:
-          adhoc: true
-          ci: false
+          adhoc: false
+          ci: true
           release: false
       - name: OSPS Baseline Scanner
         type: other
