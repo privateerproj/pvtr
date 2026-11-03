@@ -76,9 +76,16 @@ repository:
           GitHub secret scanning and push protection are enabled in the
           repository's security settings (OSPS-BR-07.01). Alerts are visible
           to maintainers only.
+        results:
+          adhoc:
+            name: Secret scanning alerts
+            predicate-uri: https://docs.github.com/en/code-security/secret-scanning/about-secret-scanning
+            location: https://github.com/privateerproj/pvtr/security/secret-scanning
+            comment: |
+              Alerts are visible to maintainers only.
         integration:
-          adhoc: false
-          ci: true
+          adhoc: true
+          ci: false
           release: false
       - name: OSPS Baseline Scanner
         type: other
