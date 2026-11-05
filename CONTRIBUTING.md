@@ -68,13 +68,19 @@ This runs `tidy → test → binary` in sequence and produces a `pvtr` binary in
 
 ### Release Builds
 
-| Target                   | Description                                                                                        |
-| ------------------------ | -------------------------------------------------------------------------------------------------- |
-| `make release`           | Full release: runs `tidy`, `test`, then builds binaries for all platforms (Linux, Windows, macOS). |
-| `make release-candidate` | Build RC binaries for all platforms (tagged with `-rc` version postfix).                           |
-| `make release-nix`       | Build Linux binary only.                                                                           |
-| `make release-win`       | Build Windows binary only.                                                                         |
-| `make release-mac`       | Build macOS (Darwin) binary only.                                                                  |
+| Target                   | Description                                                                                                    |
+| ------------------------ | -------------------------------------------------------------------------------------------------------------- |
+| `make release`           | Full release: runs `tidy`, `test`, then builds binaries for all platforms and architectures (amd64 and arm64). |
+| `make release-candidate` | Build RC binaries for all platforms and architectures (tagged with `-rc` version postfix).                     |
+| `make release-nix`       | Build Linux binaries for both amd64 and arm64.                                                                 |
+| `make release-nix-amd64` | Build Linux amd64 binary only.                                                                                 |
+| `make release-nix-arm64` | Build Linux arm64 binary only.                                                                                 |
+| `make release-win`       | Build Windows binaries for both amd64 and arm64.                                                               |
+| `make release-win-amd64` | Build Windows amd64 binary only.                                                                               |
+| `make release-win-arm64` | Build Windows arm64 binary only.                                                                               |
+| `make release-mac`       | Build macOS (Darwin) binaries for both amd64 and arm64.                                                        |
+| `make release-mac-amd64` | Build macOS (Darwin) amd64 binary only.                                                                        |
+| `make release-mac-arm64` | Build macOS (Darwin) arm64 binary only.                                                                        |
 
 > **Note:** Production releases are handled by [GoReleaser](https://goreleaser.com/) via the `.goreleaser.yaml` configuration and the GitHub Actions release workflow. The `make release-*` targets are intended for local verification before tagging.
 
