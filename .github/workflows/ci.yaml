@@ -70,8 +70,6 @@ jobs:
       - name: Setup GO environment
         run: |
           go mod download
-          go get -u golang.org/x/lint/golint
-          go get -t .
 
       - name: Vet
         run: |
