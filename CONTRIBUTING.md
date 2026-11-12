@@ -32,7 +32,7 @@ To report a bug or learn the pull request process, follow the [Privateer contrib
 
 | Tool                                       | Version            | Purpose                         |
 | ------------------------------------------ | ------------------ | ------------------------------- |
-| [Go](https://go.dev/dl/)                   | 1.25.1 or later    | Building pvtr and running tests |
+| [Go](https://go.dev/dl/)                   | 1.26.4 or later    | Building pvtr and running tests |
 | [Make](https://www.gnu.org/software/make/) | Any recent version | Running Makefile targets        |
 | [Git](https://git-scm.com/)                | Any recent version | Version control                 |
 
@@ -111,7 +111,7 @@ make testcov
 ## Project Structure
 
 ```bash
-privateer/
+pvtr/
 ├── .github/
 │   └── workflows/      # CI configurations
 ├── cmd/                # CLI commands (run, list, generate-plugin, env, version)
@@ -124,7 +124,6 @@ privateer/
 ├── .goreleaser.yaml    # Multi-platform release configuration
 ├── install.sh          # Installation script (used by install-via-script option)
 └── Dockerfile          # Container image definition
-
 ```
 
 ## Submitting Changes
@@ -158,7 +157,18 @@ git status
 
 You will see a list of changed files in red (not yet staged) and green (staged and ready to commit).
 
-### Step 4: Stage the files you want to include
+### Step 4: Verify your build locally
+
+Before staging and committing your changes, verify your build and test coverage locally:
+
+```bash
+make build    # compiles the binary and runs all tests
+make testcov  # checks your test coverage hasn't dropped
+```
+
+If either of these fails, fix the issues before proceeding; CI will catch the same problems.
+
+### Step 5: Stage the files you want to include
 
 Add the specific files you changed. Replace the filenames with your actual changed files:
 
@@ -172,7 +182,7 @@ To stage everything at once (use carefully, double-check with `git status` first
 git add .
 ```
 
-### Step 5: Commit with a sign-off
+### Step 6: Commit with a sign-off
 
 The `-s` flag automatically appends a `Signed-off-by` line to your commit, which is required to certify that your contribution is made under the project license. The `-m` flag lets you write your commit message inline:
 
@@ -184,28 +194,17 @@ git commit -s -m "description of the change"
 
 Keep your message short, describing _what_ the commit does.
 
-### Step 6: Push your branch to GitHub
+### Step 7: Push your branch to GitHub
 
 ```bash
 git push origin my-feature-branch
 ```
 
-### Step 7: Open a Pull Request
+### Step 8: Open a Pull Request
 
 Go to your fork on GitHub. You will see a prompt to open a pull request for your recently pushed branch, click it, fill in a clear title and description, and submit.
 
 > **Note:** PR titles are validated by CI. Keep them short and descriptive (the same style as your commit message). Merges require approval from a maintainer per. Refer here for [PR naming convensions](https://www.conventionalcommits.org/en/v1.0.0/).
-
-### Step 8: Verify your build locally before pushing
-
-Before opening a PR, it's good to run:
-
-```bash
-make build    # compiles the binary and runs all tests
-make testcov  # checks your test coverage hasn't dropped
-```
-
-If either of these fails, fix the issues before pushing, CI will catch the same problems.
 
 ---
 
