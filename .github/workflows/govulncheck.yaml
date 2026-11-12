@@ -65,6 +65,24 @@ jobs:
         continue-on-error: true
         run: |
           govulncheck -format sarif ./... > govulncheck.sarif
+          python3 -c "
+          import json, sys
+          with open('govulncheck.sarif', 'r', encoding='utf-8') as f:
+              data = json.load(f)
+          for res in data.get('runs', [{}])[0].get('results', []):
+              stacks = res.get('stacks', [])
+              if not stacks:
+                  continue
+              unique_stacks, seen = [], set()
+              for s in stacks:
+                  dumped = json.dumps(s, sort_keys=True)
+                  if dumped not in seen:
+                      seen.add(dumped)
+                      unique_stacks.append(s)
+              res['stacks'] = unique_stacks
+          with open('govulncheck.sarif', 'w', encoding='utf-8') as f:
+              json.dump(data, f, indent=2)
+          "
 
       - name: Upload SARIF to GitHub Code Scanning
         if: always() && steps.govulncheck-sarif.outcome != 'skipped' && hashFiles('govulncheck.sarif') != ''
