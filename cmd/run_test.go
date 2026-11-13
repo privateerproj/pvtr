@@ -33,6 +33,7 @@ func TestRunFn_RefusesConfigThatRunsNothing(t *testing.T) {
 		{name: "empty config file", config: "", want: command.NoTests},
 		{name: "config without services", config: "loglevel: error\n", want: command.NoTests},
 		{name: "services block with no entries", config: "services:\n", want: command.NoTests},
+		{name: "targets block with no entries", config: "targets:\n", want: command.NoTests},
 		// Still refused, by the SDK: the check must not mask its error.
 		{name: "service requests an uninstalled plugin", config: "services:\n  repo:\n    plugin: other\n", want: command.BadUsage},
 	} {
@@ -57,18 +58,28 @@ func TestRunFn_RefusesConfigThatRunsNothing(t *testing.T) {
 	}
 }
 
+// Requested comes from the SDK's real plugin list, for the current `targets:`
+// key and its legacy `services:` alias.
 func TestCheckRunnable_AllowsRequestedPlugin(t *testing.T) {
-	t.Cleanup(viper.Reset)
-	path := filepath.Join(t.TempDir(), "config.yml")
-	if err := os.WriteFile(path, []byte("services:\n  repo:\n    plugin: example\n"), 0o644); err != nil {
+	binDir := t.TempDir()
+	manifest := `{"plugins":{"local/example@local":{"name":"local/example","version":"local","binaryPath":"local/example"}}}`
+	if err := os.WriteFile(filepath.Join(binDir, "plugins.json"), []byte(manifest), 0o644); err != nil {
 		t.Fatal(err)
 	}
-	viper.SetConfigFile(path)
+	for _, key := range []string{"targets", "services"} {
+		t.Run(key, func(t *testing.T) {
+			t.Cleanup(viper.Reset)
+			path := filepath.Join(t.TempDir(), "config.yml")
+			if err := os.WriteFile(path, []byte(key+":\n  repo:\n    plugin: local/example\n"), 0o644); err != nil {
+				t.Fatal(err)
+			}
+			viper.Set("config", path)
+			command.ReadConfig()
+			viper.Set("binaries-path", binDir)
 
-	plugins := func() []*harness.PluginPkg {
-		return []*harness.PluginPkg{{Name: "unrelated", Installed: true}, {Name: "example", Requested: true}}
-	}
-	if code, msg := checkRunnable(plugins); code != command.TestPass {
-		t.Errorf("checkRunnable = %d (%s), want %d", code, msg, command.TestPass)
+			if code, msg := checkRunnable(harness.GetPlugins); code != command.TestPass {
+				t.Errorf("checkRunnable = %d (%s), want %d", code, msg, command.TestPass)
+			}
+		})
 	}
 }

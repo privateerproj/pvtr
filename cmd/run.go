@@ -59,5 +59,5 @@ func checkRunnable(getPlugins func() []*harness.PluginPkg) (int, string) {
 			return command.TestPass, ""
 		}
 	}
-	return command.NoTests, fmt.Sprintf("config file %s requests no plugins: define at least one service with a plugin under 'services'", viper.ConfigFileUsed())
+	return command.NoTests, fmt.Sprintf("config file %s requests no plugins: define at least one target with a plugin under 'targets'", viper.ConfigFileUsed())
 }
