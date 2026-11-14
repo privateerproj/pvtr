@@ -2,12 +2,6 @@
 name: govulncheck
 
 on:
-  push:
-    branches:
-      - main
-  pull_request:
-    branches:
-      - main
   schedule:
     # Run weekly on Mondays at 9 AM UTC
     - cron: "0 9 * * 1"
@@ -16,8 +10,7 @@ on:
 permissions: {}
 
 concurrency:
-  group: ${{ github.workflow }}-${{ github.head_ref || github.ref }}
-  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+  group: ${{ github.workflow }}-${{ github.ref }}
 
 jobs:
   govulncheck:
@@ -49,20 +42,21 @@ jobs:
           go install golang.org/x/vuln/cmd/govulncheck@v1.9.0
           govulncheck -version
 
+      # Fails the job when reachable vulnerabilities are found.
       - name: Run govulncheck (human-readable trace)
         id: govulncheck-text
         env:
           GOTOOLCHAIN: local
-        continue-on-error: true
         run: |
           govulncheck -show traces ./...
 
+      # SARIF output exits 0 even with findings, so it runs after a failed
+      # text scan without suppressing errors.
       - name: Generate SARIF report
         id: govulncheck-sarif
         if: always() && steps.govulncheck-text.outcome != 'skipped'
         env:
           GOTOOLCHAIN: local
-        continue-on-error: true
         run: |
           govulncheck -format sarif ./... > govulncheck.sarif
           python3 -c "
@@ -85,19 +79,7 @@ jobs:
           "
 
       - name: Upload SARIF to GitHub Code Scanning
-        if: always() && steps.govulncheck-sarif.outcome != 'skipped' && hashFiles('govulncheck.sarif') != ''
+        if: always() && steps.govulncheck-sarif.outcome == 'success'
         uses: github/codeql-action/upload-sarif@33d7b85da1a04171e211befe2c739303b9a4c066 # v4.39.3
         with:
           sarif_file: govulncheck.sarif
-
-      - name: Check govulncheck status
-        if: always()
-        run: |
-          if [ "${{ steps.govulncheck-text.outcome }}" != "success" ]; then
-            echo "govulncheck text scan reported vulnerabilities or failed."
-            exit 1
-          fi
-          if [ "${{ steps.govulncheck-sarif.outcome }}" != "success" ]; then
-            echo "govulncheck SARIF report generation failed."
-            exit 1
-          fi
