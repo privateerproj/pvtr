@@ -32,7 +32,7 @@ To report a bug or learn the pull request process, follow the [Privateer contrib
 
 | Tool                                       | Version            | Purpose                         |
 | ------------------------------------------ | ------------------ | ------------------------------- |
-| [Go](https://go.dev/dl/)                   | 1.26.4 or later    | Building pvtr and running tests |
+| [Go](https://go.dev/dl/)                   | 1.27.4 or later    | Building pvtr and running tests |
 | [Make](https://www.gnu.org/software/make/) | Any recent version | Running Makefile targets        |
 | [Git](https://git-scm.com/)                | Any recent version | Version control                 |
 
