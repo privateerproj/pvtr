@@ -322,8 +322,8 @@ github.com/pkg/browser v0.0.0-20240102092130-5ac0b6a4141c/go.mod h1:7rwL4CYBLnjL
 github.com/pkg/errors v0.9.1 h1:FEBLx1zS214owpjy7qsBeixbURkuhQAwrK5UwLGTwt4=
 github.com/pkg/errors v0.9.1/go.mod h1:bwawxfHBFNV+L2hUp1rHADufV3IMtnDRdf1r5NINEl0=
 github.com/pmezard/go-difflib v1.0.0/go.mod h1:iKH77koFhYxTK1pcRnkKkqfTogsbg7gZNVY4sRDYZ/4=
-github.com/privateerproj/privateer-sdk v1.34.2 h1:q+4oneCbmijQGlmfMUsbPfuZ9li4+HHlF0WumT5rXqQ=
-github.com/privateerproj/privateer-sdk v1.34.2/go.mod h1:iSM4LZ94yji/FUSKXOIW8o05/3LatHSVVww9sWn1k/Y=
+github.com/privateerproj/privateer-sdk v1.35.0 h1:gUbmRpfqueurObSt54zkGdBbBz9Q/7du88yJls/zLlo=
+github.com/privateerproj/privateer-sdk v1.35.0/go.mod h1:iSM4LZ94yji/FUSKXOIW8o05/3LatHSVVww9sWn1k/Y=
 github.com/revanite-io/grc-store-protocol v0.21.0 h1:gDqLW6qvanuAnpxcs72Nq3ZXRAl41QHr9FoItHoWrNU=
 github.com/revanite-io/grc-store-protocol v0.21.0/go.mod h1:Oqxprx0Nyb8aiqTbz613MpOGxQ7ZRe6/yNTp6kU3yNU=
 github.com/rogpeppe/go-internal v1.14.1 h1:UQB4HGPB6osV0SQTLymcB4TgvyWu6ZyliaW0tI/otEQ=
