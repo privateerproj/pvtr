@@ -1,14 +1,16 @@
 package cmd
 
 import (
+	"encoding/json"
+	"errors"
 	"fmt"
 	"log"
 	"os"
 	"path/filepath"
 	"runtime"
+	"sort"
 	"strings"
 
-	hcplugin "github.com/hashicorp/go-plugin"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
@@ -55,22 +57,75 @@ func (c *CLI) addEnvCmd() {
 	c.rootCmd.AddCommand(envCmd)
 }
 
+// pluginManifestFile is the manifest the SDK writes to binaries-path to track
+// installed plugins (the same source `pvtr list --installed` reads).
+const pluginManifestFile = "plugins.json"
+
+type manifestPlugin struct {
+	Name    string `json:"name"`
+	Version string `json:"version"`
+}
+
+// discoverPluginNames lists installed plugins from {pluginsDir}/plugins.json as
+// "name@version", sorted. Plugins installed from grc.store live at nested
+// paths, so the manifest — not a directory scan — is the source of truth.
+// Returns "none" when the manifest is missing, empty, or unreadable.
 func discoverPluginNames(logger interface{ Error(string, ...interface{}) }, pluginsDir string) string {
-	pluginPaths, err := hcplugin.Discover("*", pluginsDir)
+	plugins, err := loadManifestPlugins(pluginsDir)
 	if err != nil {
-		logger.Error("error discovering plugins", "dir", pluginsDir, "error", err)
+		logger.Error("error reading plugin manifest", "dir", pluginsDir, "error", err)
+		return "none"
 	}
+	seen := make(map[string]bool)
 	var names []string
-	for _, p := range pluginPaths {
-		name := filepath.Base(p)
-		nameWithoutExt := strings.TrimSuffix(name, filepath.Ext(name))
-		if nameWithoutExt == "pvtr" || nameWithoutExt == "privateer" {
+	for _, p := range plugins {
+		if p.Name == "" {
 			continue
 		}
-		names = append(names, name)
+		entry := p.Name
+		if p.Version != "" {
+			entry += "@" + p.Version
+		}
+		if seen[entry] {
+			continue
+		}
+		seen[entry] = true
+		names = append(names, entry)
 	}
 	if len(names) == 0 {
 		return "none"
 	}
+	sort.Strings(names)
 	return strings.Join(names, ", ")
+}
+
+// loadManifestPlugins reads the manifest, accepting both the current map
+// format and the legacy array format. A missing file yields no plugins.
+// Mirrors privateer-sdk internal/manifest.Load, which pvtr cannot import; keep in
+// sync.
+func loadManifestPlugins(pluginsDir string) ([]manifestPlugin, error) {
+	data, err := os.ReadFile(filepath.Join(pluginsDir, pluginManifestFile))
+	if err != nil {
+		if errors.Is(err, os.ErrNotExist) {
+			return nil, nil
+		}
+		return nil, err
+	}
+	var current struct {
+		Plugins map[string]manifestPlugin `json:"plugins"`
+	}
+	if err := json.Unmarshal(data, &current); err == nil {
+		out := make([]manifestPlugin, 0, len(current.Plugins))
+		for _, p := range current.Plugins {
+			out = append(out, p)
+		}
+		return out, nil
+	}
+	var legacy struct {
+		Plugins []manifestPlugin `json:"plugins"`
+	}
+	if err := json.Unmarshal(data, &legacy); err != nil {
+		return nil, fmt.Errorf("parsing %s: %w", pluginManifestFile, err)
+	}
+	return legacy.Plugins, nil
 }
