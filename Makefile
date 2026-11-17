@@ -57,9 +57,9 @@ release-candidate: tidy test
 	@echo "  >  Building release candidate for Windows (arm64)..."
 	$(BUILD_WIN_ARM64) -ldflags="$(BUILD_FLAGS) -X 'main.VersionPostfix=win-rc'"
 	@echo "  >  Building release candidate for Darwin (amd64)..."
-	$(BUILD_MAC_AMD64) -ldflags="$(BUILD_FLAGS) -X 'main.VersionPostfix=darwin'"
+	$(BUILD_MAC_AMD64) -ldflags="$(BUILD_FLAGS) -X 'main.VersionPostfix=darwin-rc'"
 	@echo "  >  Building release candidate for Darwin (arm64)..."
-	$(BUILD_MAC_ARM64) -ldflags="$(BUILD_FLAGS) -X 'main.VersionPostfix=darwin'"
+	$(BUILD_MAC_ARM64) -ldflags="$(BUILD_FLAGS) -X 'main.VersionPostfix=darwin-rc'"
 
 release-nix: release-nix-amd64 release-nix-arm64
 
