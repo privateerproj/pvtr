@@ -45,14 +45,11 @@ jobs:
         with:
           version: v0.15.1
 
-      - name: Fetch Gemara v1.5.0 Schemas
-        run: |
-          git clone --depth 1 --branch v1.5.0 https://github.com/gemaraproj/gemara.git /tmp/gemara
-
+      # Schemas are pulled from the CUE Central Registry (registry.cue.works)
       - name: Validate Threat Assessment Catalog
         run: |
-          cue vet -c -d "#ThreatCatalog" /tmp/gemara/*.cue .github/threat-assessment.yaml
+          cue vet -c -d "#ThreatCatalog" github.com/gemaraproj/gemara@v1.5.0 .github/threat-assessment.yaml
 
       - name: Validate Capability Catalog
         run: |
-          cue vet -c -d "#CapabilityCatalog" /tmp/gemara/*.cue .github/capability-catalog.yaml
+          cue vet -c -d "#CapabilityCatalog" github.com/gemaraproj/gemara@v1.5.0 .github/capability-catalog.yaml
