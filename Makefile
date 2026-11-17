@@ -45,7 +45,12 @@ tidy:
 test-cov:
 	@echo "Running tests and generating coverage output ..."
 	@go test ./... -coverprofile coverage.out -covermode count
+ifeq ($(HAVE_BASH),)
 	@echo "Current test coverage : $$(go tool cover -func=coverage.out | grep total | grep -Eo '[0-9]+\.[0-9]+') %"
+	@echo "  >  bash not found; skipping coverage threshold gate"
+else
+	@bash ./test/coverage.sh coverage.out $(or $(TESTCOVERAGE_THRESHOLD),80)
+endif
 
 release-candidate: tidy test
 	@echo "  >  Building release candidate for Linux (amd64)..."
