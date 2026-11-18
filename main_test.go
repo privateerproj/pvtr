@@ -195,4 +195,32 @@ func TestRunMain(t *testing.T) {
 			t.Errorf("expected calledBuiltAt 'mock-time', got %q", calledBuiltAt)
 		}
 	})
+
+	t.Run("explicit version with fallback build info", func(t *testing.T) {
+		readBuildInfo = func() (*debug.BuildInfo, bool) {
+			return &debug.BuildInfo{
+				Settings: []debug.BuildSetting{
+					{Key: "vcs.revision", Value: "mock-hash"},
+					{Key: "vcs.time", Value: "mock-time"},
+				},
+			}, true
+		}
+
+		Version = "2.0.0"
+		VersionPostfix = ""
+		GitCommitHash = ""
+		BuiltAt = ""
+
+		runMain()
+
+		if calledVersion != "2.0.0" {
+			t.Errorf("expected calledVersion '2.0.0', got %q", calledVersion)
+		}
+		if calledCommit != "mock-hash" {
+			t.Errorf("expected calledCommit 'mock-hash', got %q", calledCommit)
+		}
+		if calledBuiltAt != "mock-time" {
+			t.Errorf("expected calledBuiltAt 'mock-time', got %q", calledBuiltAt)
+		}
+	})
 }
