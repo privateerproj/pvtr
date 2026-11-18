@@ -62,3 +62,24 @@ func TestGeneratePluginCmd_ViperBindings(t *testing.T) {
 		t.Errorf("expected viper to reflect flag value 'custom-dir/', got %q", val)
 	}
 }
+
+func TestGeneratePluginCmd_RunSuccess(t *testing.T) {
+	origGeneratePluginFn := generatePluginFn
+	defer func() { generatePluginFn = origGeneratePluginFn }()
+
+	called := false
+	generatePluginFn = func(c *CLI) int {
+		called = true
+		return 0
+	}
+
+	c := NewCLI("1.0.0", "hash", "date")
+	c.rootCmd.SetArgs([]string{"generate-plugin"})
+	if err := c.rootCmd.Execute(); err != nil {
+		t.Fatalf("unexpected error executing generate-plugin: %v", err)
+	}
+
+	if !called {
+		t.Error("expected generatePluginFn to be called")
+	}
+}
