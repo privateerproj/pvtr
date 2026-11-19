@@ -95,3 +95,27 @@ jobs:
               echo "Failed"
               exit 1
           fi
+
+  windows-test:
+    name: Windows Unit Tests
+    needs: [changes]
+    if: needs.changes.outputs.code == 'true'
+    runs-on: windows-latest
+    permissions:
+      contents: read # Clone the repository
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with:
+          go-version-file: go.mod
+      - name: Setup GO environment
+        run: |
+          go mod download
+      - name: Vet
+        run: |
+          go vet ./...
+      - name: Unit tests
+        run: |
+          go test ./...
