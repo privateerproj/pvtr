@@ -10,8 +10,13 @@ RUN apk add --no-cache make git && \
 
 FROM alpine:3.24@sha256:f59abe656b692d901e184be3445e084786602108599d2a51d229c0f5a48c71bf
 
-WORKDIR /app
+RUN addgroup -g 10001 -S pvtr && \
+  adduser -u 10001 -S pvtr -G pvtr -h /home/pvtr
 
-COPY --from=build /app/pvtr /app/pvtr
+WORKDIR /home/pvtr
 
-CMD ["/app/pvtr", "--help"]
+COPY --from=build --chown=pvtr:pvtr /app/pvtr /usr/local/bin/pvtr
+
+USER pvtr:pvtr
+
+CMD ["pvtr", "--help"]
