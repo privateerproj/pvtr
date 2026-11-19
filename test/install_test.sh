@@ -8,6 +8,8 @@ INSTALL_SCRIPT="$REPO_ROOT/install.sh"
 
 make_mock_commands() {
     local mock_bin="$1"
+    local real_tar
+    real_tar="$(type -P tar 2>/dev/null || command -v tar 2>/dev/null || echo /usr/bin/tar)"
 
     cat <<'EOF' > "$mock_bin/uname"
 #!/bin/bash
@@ -47,28 +49,36 @@ if [[ "$url" == *"checksums.txt" ]]; then
 fi
 
 [[ "$(basename "$url")" == "$MOCK_ARCHIVE_NAME" ]] || exit 22
-printf 'mock archive' > "$output_file"
+if [[ -n "${MOCK_ARCHIVE_FILE:-}" && -f "$MOCK_ARCHIVE_FILE" ]]; then
+    cat "$MOCK_ARCHIVE_FILE" > "$output_file"
+else
+    printf 'mock archive' > "$output_file"
+fi
 EOF
 
-    cat <<'EOF' > "$mock_bin/tar"
+    cat <<EOF > "$mock_bin/tar"
 #!/bin/bash
 set -euo pipefail
 
-if [[ "${MOCK_TAR_FAIL:-0}" == "1" ]]; then
+if [[ "\${MOCK_USE_REAL_TAR:-0}" == "1" ]]; then
+    exec "$real_tar" "\$@"
+fi
+
+if [[ "\${MOCK_TAR_FAIL:-0}" == "1" ]]; then
     echo "tar: pvtr: Not found in archive" >&2
     exit 1
 fi
 
 target_dir=""
-while (($#)); do
-    case "$1" in
-        -C) target_dir="$2"; shift 2 ;;
+while ((\$#)); do
+    case "\$1" in
+        -C) target_dir="\$2"; shift 2 ;;
         *) shift ;;
     esac
 done
 
-mkdir -p "$target_dir"
-printf '#!/bin/sh\nexit 0\n' > "$target_dir/pvtr"
+mkdir -p "\$target_dir"
+printf '#!/bin/sh\\nexit 0\\n' > "\$target_dir/pvtr"
 EOF
 
     cat <<'EOF' > "$mock_bin/sha256sum"
@@ -114,7 +124,7 @@ run_in_sandbox() {
         export HOME="$work_dir/home"
         export MOCK_UNAME_S MOCK_UNAME_M MOCK_ARCHIVE_NAME MOCK_CHECKSUMS_CONTENT
         export MOCK_CHECKSUMS_NAME MOCK_ACTUAL_CHECKSUM MOCK_FAIL_CHECKSUM_DOWNLOAD
-        export MOCK_TAR_FAIL MOCK_URL_LOG SHELL PVTR_VERSION
+        export MOCK_TAR_FAIL MOCK_USE_REAL_TAR MOCK_ARCHIVE_FILE MOCK_URL_LOG SHELL PVTR_VERSION
         bash -c 'source "$1"; snippet="$2"; shift 2; eval "$snippet"' \
             _ "$INSTALL_SCRIPT" "$snippet" "$@" < "${SANDBOX_STDIN:-/dev/null}"
     )
@@ -131,6 +141,8 @@ setup() {
     MOCK_ACTUAL_CHECKSUM=expected-checksum
     MOCK_FAIL_CHECKSUM_DOWNLOAD=0
     MOCK_TAR_FAIL=0
+    MOCK_USE_REAL_TAR=0
+    MOCK_ARCHIVE_FILE=""
     SHELL=/bin/bash
     PVTR_VERSION=""
     SANDBOX_STDIN=/dev/null
@@ -372,6 +384,66 @@ test_leaves_no_binary_when_extraction_fails() {
         && fail "expected install to fail when extraction fails"
     assert_contains "$output" "does not contain a pvtr binary"
     [[ ! -e "$work_dir/install/pvtr" ]] || fail "must not leave a partial binary behind"
+}
+
+make_test_archive() {
+    local dir="$1" payload_output="${2:-hello from extracted fixture}"
+    local stage_dir="$dir/archive-stage"
+    mkdir -p "$stage_dir"
+    cat <<EOF > "$stage_dir/pvtr"
+#!/bin/sh
+echo "$payload_output"
+EOF
+    chmod +x "$stage_dir/pvtr"
+    tar -czf "$dir/fixture.tar.gz" -C "$stage_dir" pvtr
+    rm -rf "$stage_dir"
+}
+
+test_extracts_real_archive_successfully() {
+    local work_dir; setup
+    trap 'rm -rf "$work_dir"' RETURN
+
+    make_test_archive "$work_dir" "real archive binary payload"
+    MOCK_ARCHIVE_FILE="$work_dir/fixture.tar.gz"
+    MOCK_USE_REAL_TAR=1
+
+    local output
+    output="$(run_in_sandbox "$work_dir" 'download_release "$1" "$2" "$3" "$4"' \
+        "$work_dir/install" Linux_x86_64 https://example.test/latest/download latest 2>&1)" \
+        || fail "expected install to succeed with real archive" "$output"
+
+    local binary="$work_dir/install/pvtr"
+    [[ -f "$binary" ]] || fail "expected installed pvtr to exist"
+    [[ -x "$binary" ]] || fail "expected installed pvtr to be executable"
+    assert_equals "$("$binary")" "real archive binary payload"
+}
+
+test_checksum_mismatch_preserves_existing_installed_binary() {
+    local work_dir; setup
+    trap 'rm -rf "$work_dir"' RETURN
+
+    mkdir -p "$work_dir/install"
+    cat <<'EOF' > "$work_dir/install/pvtr"
+#!/bin/sh
+echo "original installed binary"
+EOF
+    chmod 755 "$work_dir/install/pvtr"
+
+    make_test_archive "$work_dir" "tampered new binary"
+    MOCK_ARCHIVE_FILE="$work_dir/fixture.tar.gz"
+    MOCK_USE_REAL_TAR=1
+    MOCK_ACTUAL_CHECKSUM=different-checksum
+
+    local output
+    output="$(run_in_sandbox "$work_dir" 'download_release "$1" "$2" "$3" "$4"' \
+        "$work_dir/install" Linux_x86_64 https://example.test/latest/download latest 2>&1)" \
+        && fail "expected install to fail when checksum mismatches"
+
+    assert_contains "$output" "Checksum mismatch"
+    local binary="$work_dir/install/pvtr"
+    [[ -f "$binary" ]] || fail "expected existing binary to remain"
+    [[ -x "$binary" ]] || fail "expected existing binary to remain executable"
+    assert_equals "$("$binary")" "original installed binary"
 }
 
 test_removes_staged_file_on_success() {
@@ -638,6 +710,8 @@ test_fails_when_checksum_download_fails
 test_fails_when_archive_missing_from_checksums
 test_fails_when_checksum_mismatches
 test_leaves_no_binary_when_extraction_fails
+test_extracts_real_archive_successfully
+test_checksum_mismatch_preserves_existing_installed_binary
 test_removes_staged_file_on_success
 test_defaults_to_latest_release
 test_pins_requested_version
