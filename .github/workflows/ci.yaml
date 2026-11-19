@@ -71,6 +71,10 @@ jobs:
         run: |
           go mod download
 
+      - name: Verify go.mod and go.sum tidiness
+        run: |
+          go mod tidy -diff
+
       - name: Vet
         run: |
           go vet ./...
