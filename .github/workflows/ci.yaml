@@ -99,3 +99,36 @@ jobs:
               echo "Failed"
               exit 1
           fi
+
+  goreleaser-snapshot:
+    name: GoReleaser Snapshot
+    needs: [changes]
+    if: needs.changes.outputs.code == 'true'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read # Clone the repository
+    steps:
+      - uses: step-security/harden-runner@1d88384fd173af6ecb012dfd0264a306b711241a # v2.22.4
+        with:
+          egress-policy: audit
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with:
+          go-version-file: go.mod
+      - name: Run GoReleaser Snapshot
+        uses: goreleaser/goreleaser-action@a4f02ab5355a589de60d917a659ce617ed19b3de # v7.3.0
+        with:
+          version: "~> v2"
+          args: release --snapshot --clean --skip=publish,sign,announce
+      - name: Verify Snapshot Artifacts
+        run: |
+          test -f dist/checksums.txt
+          test -f dist/pvtr_Darwin_all.tar.gz
+          test -f dist/pvtr_Linux_x86_64.tar.gz
+          test -f dist/pvtr_Linux_arm64.tar.gz
+          test -f dist/pvtr_Windows_x86_64.zip
+          test -f dist/pvtr_Windows_arm64.zip
+          echo "All expected release artifacts and checksums.txt were successfully generated."
