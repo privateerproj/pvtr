@@ -55,6 +55,11 @@ jobs:
             echo "linux_amd64_sha256=$(sha256sum linux_amd64.tar.gz | awk '{print $1}')"
             echo "linux_arm64_sha256=$(sha256sum linux_arm64.tar.gz | awk '{print $1}')"
           } >> "$GITHUB_OUTPUT"
+      - name: Checkout pvtr (for update-formula script)
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          path: pvtr-src
+          persist-credentials: false
       - uses: octo-sts/action@f603d3be9d8dd9871a265776e625a27b00effe05
         id: octo-sts
         with:
@@ -65,26 +70,17 @@ jobs:
         with:
           repository: privateerproj/homebrew-tap
           token: ${{ steps.octo-sts.outputs.token }}
+          path: homebrew-tap
           persist-credentials: true # Required for git push of the formula update
       - name: Update homebrew formula
+        working-directory: homebrew-tap
         env:
           TAG: ${{ needs.release.outputs.full-tag }}
           DARWIN_SHA: ${{ steps.checksums.outputs.darwin_sha256 }}
           LINUX_AMD64_SHA: ${{ steps.checksums.outputs.linux_amd64_sha256 }}
           LINUX_ARM64_SHA: ${{ steps.checksums.outputs.linux_arm64_sha256 }}
         run: |
-          # Point the formula at this tag's assets. The archive prefix is rewritten
-          # alongside the tag so the formula tracks GoReleaser's project_name; both
-          # substitutions are idempotent once the formula is already current.
-          sed -i "s|releases/download/v[^/]*/|releases/download/${TAG}/|g" pvtr.rb
-          sed -i "s|/privateer_|/pvtr_|g" pvtr.rb
-
-          # Update SHA256 checksums in order: Darwin, Linux x86_64, Linux arm64
-          awk -v d="$DARWIN_SHA" -v x="$LINUX_AMD64_SHA" -v a="$LINUX_ARM64_SHA" '
-            /sha256/ && !s1 { sub(/sha256 "[^"]*"/, "sha256 \"" d "\""); s1=1; print; next }
-            /sha256/ && !s2 { sub(/sha256 "[^"]*"/, "sha256 \"" x "\""); s2=1; print; next }
-            /sha256/ && !s3 { sub(/sha256 "[^"]*"/, "sha256 \"" a "\""); s3=1; print; next }
-            { print }' pvtr.rb > pvtr.rb.tmp && mv pvtr.rb.tmp pvtr.rb
+          bash ../pvtr-src/test/update-formula.sh pvtr.rb "$TAG" "$DARWIN_SHA" "$LINUX_AMD64_SHA" "$LINUX_ARM64_SHA"
 
           # Skip commit if formula is unchanged (e.g., workflow rerun for same tag)
           if git diff --quiet pvtr.rb; then
