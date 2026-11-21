@@ -9,15 +9,25 @@ import (
 	"github.com/privateerproj/privateer-sdk/command/harness"
 )
 
+// generatePluginFn is the function used by genPluginCmd to generate a plugin. It's a package-level
+// variable so tests can swap it out to avoid actually running plugin generation.
+var generatePluginFn = func(c *CLI) int {
+	c.setupCloseHandler()
+	return harness.GeneratePlugin(c.logger)
+}
+
 func (c *CLI) addGenPluginCmd() {
 	genPluginCmd := &cobra.Command{
 		Use:   "generate-plugin",
 		Short: "Generate a new plugin",
 		Run: func(cmd *cobra.Command, args []string) {
-			c.logger.Trace("generate-plugin called")
-			c.setupCloseHandler()
-			exitCode := harness.GeneratePlugin(c.logger)
-			os.Exit(int(exitCode))
+			if c.logger != nil {
+				c.logger.Trace("generate-plugin called")
+			}
+			exitCode := generatePluginFn(c)
+			if exitCode != 0 {
+				os.Exit(exitCode)
+			}
 		},
 	}
 
