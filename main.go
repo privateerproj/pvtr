@@ -66,7 +66,7 @@ var (
 )
 
 func runMain() {
-	if Version == "" {
+	if Version == "" || GitCommitHash == "" || BuiltAt == "" {
 		info, ok := readBuildInfo()
 		if ok {
 			setVCSInfo(info.Settings)
