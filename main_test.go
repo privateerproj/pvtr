@@ -80,20 +80,23 @@ func TestFormatVersion(t *testing.T) {
 }
 
 func TestSetVCSInfo(t *testing.T) {
+	origVersion := Version
 	origGitCommitHash := GitCommitHash
 	origBuiltAt := BuiltAt
 	origVersionPostfix := VersionPostfix
 	defer func() {
+		Version = origVersion
 		GitCommitHash = origGitCommitHash
 		BuiltAt = origBuiltAt
 		VersionPostfix = origVersionPostfix
 	}()
 
-	GitCommitHash = "existing-hash"
-	BuiltAt = "existing-time"
-	VersionPostfix = "-custom"
+	// 1. Unset fields are populated from VCS when empty
+	Version = ""
+	GitCommitHash = ""
+	BuiltAt = ""
+	VersionPostfix = ""
 
-	// 1. Non-empty VCS settings update the global values
 	settings := []debug.BuildSetting{
 		{Key: "vcs.revision", Value: "new-hash"},
 		{Key: "vcs.time", Value: "new-time"},
@@ -111,17 +114,30 @@ func TestSetVCSInfo(t *testing.T) {
 		t.Errorf("expected VersionPostfix '-dev', got %q", VersionPostfix)
 	}
 
-	// 2. Empty VCS settings preserve the existing values
-	setVCSInfo([]debug.BuildSetting{})
+	// 2. Explicit fields (e.g. from ldflags) are preserved and not overwritten
+	Version = "1.0.0"
+	GitCommitHash = "explicit-hash"
+	BuiltAt = "explicit-time"
+	VersionPostfix = "-custom"
 
-	if GitCommitHash != "new-hash" {
-		t.Errorf("expected GitCommitHash 'new-hash' to be preserved, got %q", GitCommitHash)
+	setVCSInfo(settings)
+
+	if GitCommitHash != "explicit-hash" {
+		t.Errorf("expected GitCommitHash 'explicit-hash' to be preserved, got %q", GitCommitHash)
 	}
-	if BuiltAt != "new-time" {
-		t.Errorf("expected BuiltAt 'new-time' to be preserved, got %q", BuiltAt)
+	if BuiltAt != "explicit-time" {
+		t.Errorf("expected BuiltAt 'explicit-time' to be preserved, got %q", BuiltAt)
 	}
-	if VersionPostfix != "-dev" {
-		t.Errorf("expected VersionPostfix '-dev' to be preserved, got %q", VersionPostfix)
+	if VersionPostfix != "-custom" {
+		t.Errorf("expected VersionPostfix '-custom' to be preserved, got %q", VersionPostfix)
+	}
+
+	// 3. Explicit Version does not get -dev appended on dirty tree
+	Version = "1.0.0"
+	VersionPostfix = ""
+	setVCSInfo(settings)
+	if VersionPostfix != "" {
+		t.Errorf("expected VersionPostfix to remain empty for explicit Version, got %q", VersionPostfix)
 	}
 }
 
@@ -187,6 +203,91 @@ func TestRunMain(t *testing.T) {
 
 		if calledVersion != "edge-dev" {
 			t.Errorf("expected calledVersion 'edge-dev' for empty Version, got %q", calledVersion)
+		}
+		if calledCommit != "mock-hash" {
+			t.Errorf("expected calledCommit 'mock-hash', got %q", calledCommit)
+		}
+		if calledBuiltAt != "mock-time" {
+			t.Errorf("expected calledBuiltAt 'mock-time', got %q", calledBuiltAt)
+		}
+	})
+
+	t.Run("explicit version with fallback build info", func(t *testing.T) {
+		readBuildInfo = func() (*debug.BuildInfo, bool) {
+			return &debug.BuildInfo{
+				Settings: []debug.BuildSetting{
+					{Key: "vcs.revision", Value: "mock-hash"},
+					{Key: "vcs.time", Value: "mock-time"},
+				},
+			}, true
+		}
+
+		Version = "2.0.0"
+		VersionPostfix = ""
+		GitCommitHash = ""
+		BuiltAt = ""
+
+		runMain()
+
+		if calledVersion != "2.0.0" {
+			t.Errorf("expected calledVersion '2.0.0', got %q", calledVersion)
+		}
+		if calledCommit != "mock-hash" {
+			t.Errorf("expected calledCommit 'mock-hash', got %q", calledCommit)
+		}
+		if calledBuiltAt != "mock-time" {
+			t.Errorf("expected calledBuiltAt 'mock-time', got %q", calledBuiltAt)
+		}
+	})
+
+	t.Run("partial ldflags preserves explicit commit and fills build time", func(t *testing.T) {
+		readBuildInfo = func() (*debug.BuildInfo, bool) {
+			return &debug.BuildInfo{
+				Settings: []debug.BuildSetting{
+					{Key: "vcs.revision", Value: "full-40-char-vcs-revision"},
+					{Key: "vcs.time", Value: "mock-time"},
+				},
+			}, true
+		}
+
+		Version = "1.0.0"
+		VersionPostfix = ""
+		GitCommitHash = "abc1234"
+		BuiltAt = ""
+
+		runMain()
+
+		if calledVersion != "1.0.0" {
+			t.Errorf("expected calledVersion '1.0.0', got %q", calledVersion)
+		}
+		if calledCommit != "abc1234" {
+			t.Errorf("expected calledCommit 'abc1234' to be preserved, got %q", calledCommit)
+		}
+		if calledBuiltAt != "mock-time" {
+			t.Errorf("expected calledBuiltAt 'mock-time', got %q", calledBuiltAt)
+		}
+	})
+
+	t.Run("explicit version with dirty tree does not append dev postfix", func(t *testing.T) {
+		readBuildInfo = func() (*debug.BuildInfo, bool) {
+			return &debug.BuildInfo{
+				Settings: []debug.BuildSetting{
+					{Key: "vcs.revision", Value: "mock-hash"},
+					{Key: "vcs.time", Value: "mock-time"},
+					{Key: "vcs.modified", Value: "true"},
+				},
+			}, true
+		}
+
+		Version = "0.2.0"
+		VersionPostfix = ""
+		GitCommitHash = ""
+		BuiltAt = ""
+
+		runMain()
+
+		if calledVersion != "0.2.0" {
+			t.Errorf("expected calledVersion '0.2.0' without -dev, got %q", calledVersion)
 		}
 		if calledCommit != "mock-hash" {
 			t.Errorf("expected calledCommit 'mock-hash', got %q", calledCommit)
