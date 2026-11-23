@@ -117,42 +117,77 @@ func TestDiscoverPluginNames_NonexistentDir(t *testing.T) {
 	}
 }
 
-func TestDiscoverPluginNames_FiltersPvtrAndPrivateer(t *testing.T) {
-	tmpDir, err := os.MkdirTemp("", "pvtr-test-*")
-	if err != nil {
-		t.Fatalf("failed to create temp dir: %v", err)
+func writeManifest(t *testing.T, dir, content string) {
+	t.Helper()
+	if err := os.WriteFile(filepath.Join(dir, "plugins.json"), []byte(content), 0644); err != nil {
+		t.Fatalf("failed to write manifest: %v", err)
 	}
-	defer func() { _ = os.RemoveAll(tmpDir) }()
+}
 
-	for _, name := range []string{"pvtr", "pvtr-foo", "privateer", "privateer-foo", "my-plugin", "other-tool"} {
-		path := filepath.Join(tmpDir, name)
-		if err := os.WriteFile(path, []byte("#!/bin/sh\n"), 0755); err != nil {
+func TestDiscoverPluginNames_ReadsManifest(t *testing.T) {
+	tmpDir := t.TempDir()
+	// A grc.store install lives at a nested path; top level holds only the
+	// coordinate folder and the manifest (the layout from issue #348).
+	nested := filepath.Join(tmpDir, "local", "myplugin", "local")
+	if err := os.MkdirAll(nested, 0755); err != nil {
+		t.Fatalf("mkdir: %v", err)
+	}
+	if err := os.WriteFile(filepath.Join(nested, "myplugin"), []byte("#!/bin/sh\n"), 0755); err != nil {
+		t.Fatalf("write binary: %v", err)
+	}
+	writeManifest(t, tmpDir, `{"plugins":{
+		"local/myplugin@local":{"name":"local/myplugin","version":"local","binaryPath":"local/myplugin/local/myplugin"},
+		"ossf/pvtr-github-repo-scanner@v0.2.0":{"name":"ossf/pvtr-github-repo-scanner","version":"v0.2.0","binaryPath":"github-repo"}
+	}}`)
+
+	result := discoverPluginNames(hclog.NewNullLogger(), tmpDir)
+	want := "local/myplugin@local, ossf/pvtr-github-repo-scanner@v0.2.0"
+	if result != want {
+		t.Errorf("got %q, want %q", result, want)
+	}
+	if strings.Contains(result, "plugins.json") {
+		t.Errorf("manifest file must not be listed as a plugin, got: %s", result)
+	}
+}
+
+func TestDiscoverPluginNames_LegacyArrayManifest(t *testing.T) {
+	tmpDir := t.TempDir()
+	writeManifest(t, tmpDir, `{"plugins":[{"name":"b/two","version":"v2"},{"name":"a/one","version":"v1"}]}`)
+
+	result := discoverPluginNames(hclog.NewNullLogger(), tmpDir)
+	if want := "a/one@v1, b/two@v2"; result != want {
+		t.Errorf("got %q, want %q", result, want)
+	}
+}
+
+func TestDiscoverPluginNames_EmptyManifest(t *testing.T) {
+	tmpDir := t.TempDir()
+	writeManifest(t, tmpDir, `{"plugins":{}}`)
+
+	if result := discoverPluginNames(hclog.NewNullLogger(), tmpDir); result != "none" {
+		t.Errorf("expected 'none' for empty manifest, got: %s", result)
+	}
+}
+
+func TestDiscoverPluginNames_IgnoresLooseFilesWithoutManifest(t *testing.T) {
+	tmpDir := t.TempDir()
+	for _, name := range []string{"pvtr", "my-plugin"} {
+		if err := os.WriteFile(filepath.Join(tmpDir, name), []byte("#!/bin/sh\n"), 0755); err != nil {
 			t.Fatalf("failed to create file %s: %v", name, err)
 		}
 	}
 
-	result := discoverPluginNames(hclog.NewNullLogger(), tmpDir)
+	if result := discoverPluginNames(hclog.NewNullLogger(), tmpDir); result != "none" {
+		t.Errorf("expected 'none' without a manifest, got: %s", result)
+	}
+}
 
-	// Exact-name binaries should be filtered out
-	for _, filtered := range []string{"pvtr", "privateer"} {
-		for _, entry := range strings.Split(result, ", ") {
-			if entry == filtered {
-				t.Errorf("expected %q to be filtered out, got: %s", filtered, result)
-			}
-		}
-	}
-	// Prefixed plugin names should still be discoverable
-	if !strings.Contains(result, "pvtr-foo") {
-		t.Errorf("expected 'pvtr-foo' in result, got: %s", result)
-	}
-	if !strings.Contains(result, "privateer-foo") {
-		t.Errorf("expected 'privateer-foo' in result, got: %s", result)
-	}
-	if !strings.Contains(result, "my-plugin") {
-		t.Errorf("expected 'my-plugin' in result, got: %s", result)
-	}
-	if !strings.Contains(result, "other-tool") {
-		t.Errorf("expected 'other-tool' in result, got: %s", result)
+func TestDiscoverPluginNames_MalformedManifest(t *testing.T) {
+	tmpDir := t.TempDir()
+	writeManifest(t, tmpDir, `not json`)
+
+	if result := discoverPluginNames(hclog.NewNullLogger(), tmpDir); result != "none" {
+		t.Errorf("expected 'none' for malformed manifest, got: %s", result)
 	}
 }
 
@@ -201,3 +236,82 @@ func TestEnvCmd_ConfigStatusNotFound(t *testing.T) {
 		t.Errorf("expected output to contain config path %q, got:\n%s", nonExistentPath, output)
 	}
 }
+
+func TestDiscoverPluginNames_EntryWithoutVersion(t *testing.T) {
+	tmpDir := t.TempDir()
+	writeManifest(t, tmpDir, `{"plugins":{"a/one@":{"name":"a/one"},"b/two@v2":{"name":"b/two","version":"v2"}}}`)
+
+	result := discoverPluginNames(hclog.NewNullLogger(), tmpDir)
+	if want := "a/one, b/two@v2"; result != want {
+		t.Errorf("got %q, want %q", result, want)
+	}
+}
+
+func TestDiscoverPluginNames_SkipsEmptyName(t *testing.T) {
+	tmpDir := t.TempDir()
+	writeManifest(t, tmpDir, `{"plugins":[{"name":"","version":"v1"},{"name":"a/one","version":"v1"}]}`)
+
+	result := discoverPluginNames(hclog.NewNullLogger(), tmpDir)
+	if want := "a/one@v1"; result != want {
+		t.Errorf("got %q, want %q", result, want)
+	}
+}
+
+func TestDiscoverPluginNames_DeDuplicates(t *testing.T) {
+	tmpDir := t.TempDir()
+	// The legacy array format can carry the same name+version twice.
+	writeManifest(t, tmpDir, `{"plugins":[{"name":"a/one","version":"v1"},{"name":"a/one","version":"v1"},{"name":"a/one","version":"v2"}]}`)
+
+	result := discoverPluginNames(hclog.NewNullLogger(), tmpDir)
+	if want := "a/one@v1, a/one@v2"; result != want {
+		t.Errorf("got %q, want %q", result, want)
+	}
+}
+
+func TestDiscoverPluginNames_UnreadableManifest(t *testing.T) {
+	tmpDir := t.TempDir()
+	// A directory where the manifest should be makes ReadFile fail with an
+	// error other than "not exist", regardless of the user running the test.
+	if err := os.Mkdir(filepath.Join(tmpDir, "plugins.json"), 0755); err != nil {
+		t.Fatalf("mkdir: %v", err)
+	}
+
+	logger := &errorCountLogger{}
+	if result := discoverPluginNames(logger, tmpDir); result != "none" {
+		t.Errorf("expected 'none' for unreadable manifest, got: %s", result)
+	}
+	if logger.errors != 1 {
+		t.Errorf("expected 1 Error call for an unreadable manifest, got %d", logger.errors)
+	}
+}
+
+func TestDiscoverPluginNames_MissingManifestLogsNothing(t *testing.T) {
+	logger := &errorCountLogger{}
+	if result := discoverPluginNames(logger, t.TempDir()); result != "none" {
+		t.Errorf("expected 'none' without a manifest, got: %s", result)
+	}
+	if logger.errors != 0 {
+		t.Errorf("expected no Error calls for a missing manifest, got %d", logger.errors)
+	}
+}
+
+func TestDiscoverPluginNames_WrongFieldTypeMatchesSDK(t *testing.T) {
+	tmpDir := t.TempDir()
+	// The SDK types binaryPath as a string, so it refuses this manifest; env
+	// must not list a plugin that list and run cannot see.
+	writeManifest(t, tmpDir, `{"plugins":{"org/plugin@1.0.0":{"name":"org/plugin","version":"1.0.0","binaryPath":123}}}`)
+
+	logger := &errorCountLogger{}
+	if result := discoverPluginNames(logger, tmpDir); result != "none" {
+		t.Errorf("expected 'none' for a manifest the SDK rejects, got: %s", result)
+	}
+	if logger.errors != 1 {
+		t.Errorf("expected 1 Error call, got %d", logger.errors)
+	}
+}
+
+// errorCountLogger counts Error calls so tests can tell a reported read error
+// from a silently missing manifest.
+type errorCountLogger struct{ errors int }
+
+func (l *errorCountLogger) Error(string, ...interface{}) { l.errors++ }

@@ -39,13 +39,13 @@ func parseVCSInfo(settings []debug.BuildSetting) (commit, builtAt, postfix strin
 
 func setVCSInfo(settings []debug.BuildSetting) {
 	commit, builtAt, postfix := parseVCSInfo(settings)
-	if commit != "" {
+	if GitCommitHash == "" && commit != "" {
 		GitCommitHash = commit
 	}
-	if builtAt != "" {
+	if BuiltAt == "" && builtAt != "" {
 		BuiltAt = builtAt
 	}
-	if postfix != "" {
+	if Version == "" && VersionPostfix == "" && postfix != "" {
 		VersionPostfix = postfix
 	}
 }
@@ -66,7 +66,7 @@ var (
 )
 
 func runMain() {
-	if Version == "" {
+	if Version == "" || GitCommitHash == "" || BuiltAt == "" {
 		info, ok := readBuildInfo()
 		if ok {
 			setVCSInfo(info.Settings)
