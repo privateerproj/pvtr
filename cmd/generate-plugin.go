@@ -21,9 +21,7 @@ func (c *CLI) addGenPluginCmd() {
 		Use:   "generate-plugin",
 		Short: "Generate a new plugin",
 		Run: func(cmd *cobra.Command, args []string) {
-			if c.logger != nil {
-				c.logger.Trace("generate-plugin called")
-			}
+			c.logger.Trace("generate-plugin called")
 			exitCode := generatePluginFn(c)
 			if exitCode != 0 {
 				os.Exit(exitCode)

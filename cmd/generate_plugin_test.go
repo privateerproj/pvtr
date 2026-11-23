@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"bytes"
+	"log"
 	"testing"
 
 	"github.com/spf13/viper"
@@ -64,6 +65,14 @@ func TestGeneratePluginCmd_ViperBindings(t *testing.T) {
 }
 
 func TestGeneratePluginCmd_RunSuccess(t *testing.T) {
+	tmpHome := t.TempDir()
+	t.Setenv("HOME", tmpHome)
+	t.Setenv("USERPROFILE", tmpHome)
+	t.Setenv("PVTR_LOGLEVEL", "")
+	t.Cleanup(viper.Reset)
+	origLogWriter := log.Writer()
+	t.Cleanup(func() { log.SetOutput(origLogWriter) })
+
 	origGeneratePluginFn := generatePluginFn
 	defer func() { generatePluginFn = origGeneratePluginFn }()
 
