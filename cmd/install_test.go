@@ -31,4 +31,7 @@ func TestInstallCmd_LocalNonExistentPathFails(t *testing.T) {
 	if err == nil {
 		t.Fatal("expected install --local with non-existent path to fail")
 	}
+	if !strings.Contains(err.Error(), "cannot access") {
+		t.Errorf("expected error to mention 'cannot access', got: %v", err)
+	}
 }
