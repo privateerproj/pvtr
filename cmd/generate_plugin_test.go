@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"bytes"
+	"log"
 	"testing"
 
 	"github.com/spf13/viper"
@@ -60,5 +61,34 @@ func TestGeneratePluginCmd_ViperBindings(t *testing.T) {
 	}
 	if val := viper.GetString("output-dir"); val != "custom-dir/" {
 		t.Errorf("expected viper to reflect flag value 'custom-dir/', got %q", val)
+	}
+}
+
+func TestGeneratePluginCmd_RunSuccess(t *testing.T) {
+	tmpHome := t.TempDir()
+	t.Setenv("HOME", tmpHome)
+	t.Setenv("USERPROFILE", tmpHome)
+	t.Setenv("PVTR_LOGLEVEL", "")
+	t.Cleanup(viper.Reset)
+	origLogWriter := log.Writer()
+	t.Cleanup(func() { log.SetOutput(origLogWriter) })
+
+	origGeneratePluginFn := generatePluginFn
+	defer func() { generatePluginFn = origGeneratePluginFn }()
+
+	called := false
+	generatePluginFn = func(c *CLI) int {
+		called = true
+		return 0
+	}
+
+	c := NewCLI("1.0.0", "hash", "date")
+	c.rootCmd.SetArgs([]string{"generate-plugin"})
+	if err := c.rootCmd.Execute(); err != nil {
+		t.Fatalf("unexpected error executing generate-plugin: %v", err)
+	}
+
+	if !called {
+		t.Error("expected generatePluginFn to be called")
 	}
 }
