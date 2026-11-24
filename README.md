@@ -79,7 +79,15 @@ We do not currently maintain an authoritative list of community plugins, but a g
 
 ### Step 4: Install & Verify Your Plugins
 
-Plugin installation is currently left to the user. The default location for plugin binaries is `$HOME/.privateer/bin`. You may specify a different location at runtime via `--binaries-path` if you install your plugins elsewhere.
+Install a plugin from grc.store by its coordinate:
+
+```bash
+pvtr install <namespace>/<plugin_id>[@<version>]
+```
+
+Every plugin installed this way is checked before it is written to disk: its Sigstore signature, its signer identity (pinned the first time you install it), and its full digest chain. See [Plugin Supply-Chain Security](docs/plugin-supply-chain.md) for the trust model, its first-install limits, and installing from an air-gapped or internal registry.
+
+The default location for plugin binaries is `$HOME/.privateer/bin`. You may specify a different location at runtime via `--binaries-path` if you install your plugins elsewhere.
 
 To review the plugins you have installed, run `pvtr list -a`.
 
