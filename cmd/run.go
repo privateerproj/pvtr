@@ -13,6 +13,9 @@ import (
 // runFn is the function used by runCmd to execute plugins. It's a package-level
 // variable so tests can swap it out to avoid actually running plugins.
 var runFn = func(ctx context.Context, c *CLI) int {
+	if ctx == nil {
+		ctx = context.Background()
+	}
 	c.setupCloseHandler()
 	return harness.Run(ctx, c.writer, c.logger, harness.GetPlugins)
 }

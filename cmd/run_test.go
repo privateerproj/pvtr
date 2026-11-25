@@ -146,6 +146,10 @@ func TestRunCmd_NoArgsRejectsPositionalArgs(t *testing.T) {
 
 	origRunFn := runFn
 	defer func() { runFn = origRunFn }()
+	runFn = func(context.Context, *CLI) int {
+		t.Error("runFn should not be called when positional args are rejected")
+		return 0
+	}
 
 	c := NewCLI("1.0.0", "hash", "date")
 	c.rootCmd.SetArgs([]string{"run", "unexpected-arg"})
@@ -153,7 +157,7 @@ func TestRunCmd_NoArgsRejectsPositionalArgs(t *testing.T) {
 	if err == nil {
 		t.Fatal("expected run command with extra positional arguments to fail")
 	}
-	if !strings.Contains(err.Error(), "unknown command") && !strings.Contains(err.Error(), "accepts 0 arg(s)") {
-		t.Errorf("expected error message to indicate unknown command or arg count violation, got: %v", err)
+	if !strings.Contains(err.Error(), `unknown command "unexpected-arg" for "pvtr run"`) {
+		t.Errorf("expected error message to indicate unknown command violation, got: %v", err)
 	}
 }
