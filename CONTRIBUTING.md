@@ -63,7 +63,7 @@ This runs `tidy → test → binary` in sequence and produces a `pvtr` binary in
 | `make build`   | Full build: runs `tidy`, then `test`, then compiles the binary. Alias for `tidy test binary`. |
 | `make binary`  | Compile the `pvtr` binary only (no tests, no tidy).                                           |
 | `make test`    | Run `go vet` checks and all unit tests (`go test ./...`).                                     |
-| `make testcov` | Run tests, vet checks, and generate a coverage report with total coverage percentage.         |
+| `make testcov` | Run tests and vet, report coverage, and enforce the >80% gate.                                |
 | `make tidy`    | Run `go mod tidy` to clean up module dependencies.                                            |
 
 ### Release Builds
@@ -100,10 +100,18 @@ Run all tests and vet checks:
 make test
 ```
 
-Run tests with a coverage report (outputs total coverage percentage to stdout):
+Run tests with coverage and enforce the quality gate. Coverage must be greater than the threshold (default: 80%):
 
 ```bash
 make testcov
+```
+
+If Bash is unavailable, `make test-cov` prints the report but skips the threshold check.
+
+You can override the threshold with the `TESTCOVERAGE_THRESHOLD` environment variable:
+
+```bash
+TESTCOVERAGE_THRESHOLD=85 make testcov
 ```
 
 ---
