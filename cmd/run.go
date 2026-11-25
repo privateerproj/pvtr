@@ -12,9 +12,12 @@ import (
 
 // runFn is the function used by runCmd to execute plugins. It's a package-level
 // variable so tests can swap it out to avoid actually running plugins.
-var runFn = func(c *CLI) int {
+var runFn = func(ctx context.Context, c *CLI) int {
+	if ctx == nil {
+		ctx = context.Background()
+	}
 	c.setupCloseHandler()
-	return harness.Run(context.Background(), c.writer, c.logger, harness.GetPlugins)
+	return harness.Run(ctx, c.writer, c.logger, harness.GetPlugins)
 }
 
 func (c *CLI) addRunCmd() {
@@ -26,7 +29,7 @@ When everything is battoned down, it is time to run forth.`,
 		Args: cobra.NoArgs,
 		Run: func(cmd *cobra.Command, args []string) {
 			c.logger.Trace("run called")
-			exitCode := runFn(c)
+			exitCode := runFn(cmd.Context(), c)
 			if exitCode != 0 {
 				os.Exit(exitCode)
 			}

@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"bytes"
+	"context"
 	"log"
 	"os"
 	"path/filepath"
@@ -62,7 +63,7 @@ func TestRunCmd_DoesNotPanicWithoutPersistentPreRun(t *testing.T) {
 	c := NewCLI("1.0.0", "abc123", "2026-01-01T00:00:00Z")
 
 	originalRunFn := runFn
-	runFn = func(_ *CLI) int { return 0 }
+	runFn = func(_ context.Context, _ *CLI) int { return 0 }
 	defer func() { runFn = originalRunFn }()
 
 	runCmd, _, err := c.rootCmd.Find([]string{"run"})
