@@ -3,6 +3,7 @@ package cmd
 import (
 	"bytes"
 	"log"
+	"strings"
 	"testing"
 
 	"github.com/spf13/viper"
@@ -92,3 +93,31 @@ func TestGeneratePluginCmd_RunSuccess(t *testing.T) {
 		t.Error("expected generatePluginFn to be called")
 	}
 }
+
+func TestGeneratePluginCmd_NoArgsRejectsPositionalArgs(t *testing.T) {
+	tmpHome := t.TempDir()
+	t.Setenv("HOME", tmpHome)
+	t.Setenv("USERPROFILE", tmpHome)
+	t.Setenv("PVTR_LOGLEVEL", "")
+	t.Cleanup(viper.Reset)
+	origLogWriter := log.Writer()
+	t.Cleanup(func() { log.SetOutput(origLogWriter) })
+
+	origGeneratePluginFn := generatePluginFn
+	defer func() { generatePluginFn = origGeneratePluginFn }()
+	generatePluginFn = func(c *CLI) int {
+		t.Error("generatePluginFn should not be called when positional args are rejected")
+		return 0
+	}
+
+	c := NewCLI("1.0.0", "hash", "date")
+	c.rootCmd.SetArgs([]string{"generate-plugin", "unexpected-arg"})
+	err := c.rootCmd.Execute()
+	if err == nil {
+		t.Fatal("expected generate-plugin command with extra positional arguments to fail")
+	}
+	if !strings.Contains(err.Error(), `unknown command "unexpected-arg" for "pvtr generate-plugin"`) {
+		t.Errorf("expected error message to indicate unknown command violation, got: %v", err)
+	}
+}
+

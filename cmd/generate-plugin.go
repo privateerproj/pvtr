@@ -19,6 +19,7 @@ var generatePluginFn = func(c *CLI) int {
 func (c *CLI) addGenPluginCmd() {
 	genPluginCmd := &cobra.Command{
 		Use:   "generate-plugin",
+		Args:  cobra.NoArgs,
 		Short: "Generate a new plugin",
 		Run: func(cmd *cobra.Command, args []string) {
 			c.logger.Trace("generate-plugin called")
