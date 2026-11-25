@@ -10,6 +10,7 @@ import (
 func (c *CLI) addVersionCmd() {
 	versionCmd := &cobra.Command{
 		Use:   "version",
+		Args:  cobra.NoArgs,
 		Short: "Display version details.",
 		Long:  `Display the version, git commit hash, and build timestamp of this pvtr build. Use the --verbose flag to see all details.`,
 		Run: func(cmd *cobra.Command, args []string) {

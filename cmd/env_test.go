@@ -315,3 +315,19 @@ func TestDiscoverPluginNames_WrongFieldTypeMatchesSDK(t *testing.T) {
 type errorCountLogger struct{ errors int }
 
 func (l *errorCountLogger) Error(string, ...interface{}) { l.errors++ }
+
+func TestEnvCmd_NoArgsRejectsPositionalArgs(t *testing.T) {
+	var buf bytes.Buffer
+	c := newTestCLI(&buf, "1.2.3", "a1b2c3d", "2026-01-01T00:00:00Z")
+	c.addEnvCmd()
+
+	c.rootCmd.SetArgs([]string{"env", "unexpected-arg"})
+	err := c.rootCmd.Execute()
+	if err == nil {
+		t.Fatal("expected env command with extra positional arguments to fail")
+	}
+	if !strings.Contains(err.Error(), `unknown command "unexpected-arg" for "pvtr env"`) {
+		t.Errorf("expected error message to indicate unknown command violation, got: %v", err)
+	}
+}
+
