@@ -84,6 +84,10 @@ jobs:
           make test
           make test-cov
 
+      - name: Race detector tests
+        run: |
+          go test -race -count=1 ./...
+
       - name: Quality Gate - Test coverage shall be above threshold
         env:
           TESTCOVERAGE_THRESHOLD: 80
