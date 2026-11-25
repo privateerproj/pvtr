@@ -89,13 +89,14 @@ func (c *CLI) setupCloseHandler() {
 
 // persistentPreRun initializes the logger and writer for use by all commands.
 func (c *CLI) persistentPreRun(cmd *cobra.Command, args []string) {
+	command.ReadConfig()
+
 	cfg := config.NewConfig(nil)
 	c.logger = cfg.Logger
 
 	if c.writer == nil {
 		c.writer = tabwriter.NewWriter(os.Stdout, 1, 1, 1, ' ', 0)
 	}
-	command.ReadConfig()
 }
 
 // defaultBinariesPath returns the default path where plugins are installed.

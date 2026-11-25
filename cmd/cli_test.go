@@ -9,6 +9,7 @@ import (
 	"strings"
 	"testing"
 
+	hclog "github.com/hashicorp/go-hclog"
 	"github.com/spf13/viper"
 )
 
@@ -117,6 +118,9 @@ func TestPersistentPreRun(t *testing.T) {
 	}
 	if c.writer == nil {
 		t.Error("expected writer to be initialized after persistentPreRun")
+	}
+	if c.logger.GetLevel() != hclog.Debug {
+		t.Errorf("expected logger level debug, got %v", c.logger.GetLevel())
 	}
 	if val := viper.GetString("loglevel"); val != "debug" {
 		t.Errorf("expected config value 'debug' to be loaded by ReadConfig, got %q", val)
