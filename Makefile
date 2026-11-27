@@ -31,9 +31,10 @@ binary:
 test:
 	@echo "  >  Validating code ..."
 ifeq ($(HAVE_BASH),)
-	@echo "  >  bash not found; skipping install_test.sh (Go tests still run)"
+	@echo "  >  bash not found; skipping script tests (Go tests still run)"
 else
 	@bash ./test/install_test.sh
+	@bash ./test/update_formula_test.sh
 endif
 	@go vet ./...
 	@go test ./...
