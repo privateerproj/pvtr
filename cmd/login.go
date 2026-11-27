@@ -1,10 +1,17 @@
 package cmd
 
 import (
+	"github.com/spf13/cobra"
+
 	"github.com/privateerproj/privateer-sdk/command/harness"
 )
 
 func (c *CLI) addLoginCmds() {
-	c.rootCmd.AddCommand(harness.GetLoginCmd(func() harness.Writer { return c.writer }))
-	c.rootCmd.AddCommand(harness.GetLogoutCmd(func() harness.Writer { return c.writer }))
+	loginCmd := harness.GetLoginCmd(func() harness.Writer { return c.writer })
+	loginCmd.Args = cobra.NoArgs
+	c.rootCmd.AddCommand(loginCmd)
+
+	logoutCmd := harness.GetLogoutCmd(func() harness.Writer { return c.writer })
+	logoutCmd.Args = cobra.NoArgs
+	c.rootCmd.AddCommand(logoutCmd)
 }
