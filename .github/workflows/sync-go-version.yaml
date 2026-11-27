@@ -24,9 +24,11 @@ jobs:
           egress-policy: audit
 
       # Check out the PR head branch (not the merge ref) so any sync commit lands on it.
+      # Fork branches exist only in the fork, so fetch from the head repository.
       # persist-credentials is required so the subsequent git push uses GITHUB_TOKEN.
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
+          repository: ${{ github.event.pull_request.head.repo.full_name }}
           ref: ${{ github.head_ref }}
           persist-credentials: true
 
