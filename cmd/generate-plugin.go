@@ -12,7 +12,8 @@ import (
 // generatePluginFn is the function used by genPluginCmd to generate a plugin. It's a package-level
 // variable so tests can swap it out to avoid actually running plugin generation.
 var generatePluginFn = func(c *CLI) int {
-	c.setupCloseHandler()
+	cleanup := c.setupCloseHandler()
+	defer cleanup()
 	return harness.GeneratePlugin(c.logger)
 }
 

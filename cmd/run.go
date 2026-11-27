@@ -16,7 +16,8 @@ var runFn = func(ctx context.Context, c *CLI) int {
 	if ctx == nil {
 		ctx = context.Background()
 	}
-	c.setupCloseHandler()
+	cleanup := c.setupCloseHandler()
+	defer cleanup()
 	return harness.Run(ctx, c.writer, c.logger, harness.GetPlugins)
 }
 
