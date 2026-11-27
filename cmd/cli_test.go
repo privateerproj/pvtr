@@ -10,6 +10,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
 
@@ -123,6 +124,65 @@ func TestPersistentPreRun(t *testing.T) {
 		t.Errorf("expected config value 'debug' to be loaded by ReadConfig, got %q", val)
 	}
 }
+
+func TestPersistentPreRun_UsesCmdOutOrStdout(t *testing.T) {
+	tmpHome := t.TempDir()
+	t.Setenv("HOME", tmpHome)
+	t.Setenv("USERPROFILE", tmpHome)
+	t.Setenv("PVTR_LOGLEVEL", "")
+	t.Cleanup(viper.Reset)
+	origLogWriter := log.Writer()
+	t.Cleanup(func() { log.SetOutput(origLogWriter) })
+
+	var buf bytes.Buffer
+	dummyCmd := &cobra.Command{Use: "dummy"}
+	dummyCmd.SetOut(&buf)
+
+	c := &CLI{}
+	c.persistentPreRun(dummyCmd, []string{})
+
+	if c.writer == nil {
+		t.Fatal("expected writer to be initialized after persistentPreRun")
+	}
+
+	testMsg := "hello redirected output\n"
+	_, err := c.writer.Write([]byte(testMsg))
+	if err != nil {
+		t.Fatalf("unexpected error writing to c.writer: %v", err)
+	}
+	if err := c.writer.Flush(); err != nil {
+		t.Fatalf("unexpected error flushing c.writer: %v", err)
+	}
+
+	if !strings.Contains(buf.String(), "hello redirected output") {
+		t.Errorf("expected buffer to receive redirected message, got %q", buf.String())
+	}
+}
+
+func TestNewCLI_SubcommandHonorsSetOut(t *testing.T) {
+	tmpHome := t.TempDir()
+	t.Setenv("HOME", tmpHome)
+	t.Setenv("USERPROFILE", tmpHome)
+	t.Setenv("PVTR_LOGLEVEL", "")
+	t.Cleanup(viper.Reset)
+	origLogWriter := log.Writer()
+	t.Cleanup(func() { log.SetOutput(origLogWriter) })
+
+	var buf bytes.Buffer
+	c := NewCLI("1.2.3", "a1b2c3d", "2026-01-01T00:00:00Z")
+	c.rootCmd.SetOut(&buf)
+	c.rootCmd.SetArgs([]string{"version"})
+
+	if err := c.rootCmd.Execute(); err != nil {
+		t.Fatalf("unexpected error executing version: %v", err)
+	}
+
+	output := buf.String()
+	if !strings.Contains(output, "1.2.3") {
+		t.Errorf("expected redirected buffer to contain version '1.2.3', got: %q", output)
+	}
+}
+
 
 func TestDefaultBinariesPath(t *testing.T) {
 	path := defaultBinariesPath()
