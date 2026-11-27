@@ -4,10 +4,12 @@
 package cmd
 
 import (
+	"context"
 	"log"
 	"os"
 	"os/signal"
 	"path/filepath"
+	"sync"
 	"syscall"
 	"text/tabwriter"
 
@@ -66,9 +68,17 @@ func NewCLI(version, commitHash, builtAt string) *CLI {
 	return c
 }
 
-// Execute runs the root command. This is called by main.main().
+// ExecuteContext runs the root command with the provided context.
+func (c *CLI) ExecuteContext(ctx context.Context) error {
+	return c.rootCmd.ExecuteContext(ctx)
+}
+
+// Execute runs the root command with signal cancellation. This is called by main.main().
 func (c *CLI) Execute() {
-	err := c.rootCmd.Execute()
+	ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
+	defer cancel()
+
+	err := c.ExecuteContext(ctx)
 	if err != nil {
 		os.Exit(1)
 	}
@@ -76,15 +86,29 @@ func (c *CLI) Execute() {
 
 // setupCloseHandler creates a signal listener on a new goroutine which will notify
 // the program if it receives an interrupt from the OS (SIGINT or SIGTERM).
+// It returns a cleanup function that stops signal notifications and terminates
+// the listener goroutine.
 // Shared across subcommands that perform long-running or interruptible work.
-func (c *CLI) setupCloseHandler() {
+func (c *CLI) setupCloseHandler() func() {
 	ch := make(chan os.Signal, 1)
 	signal.Notify(ch, os.Interrupt, syscall.SIGTERM)
+	done := make(chan struct{})
 	go func() {
-		<-ch
-		c.logger.Error("Execution was aborted by user")
-		os.Exit(int(command.Aborted))
+		select {
+		case <-ch:
+			c.logger.Error("Execution was aborted by user")
+			os.Exit(int(command.Aborted))
+		case <-done:
+		}
 	}()
+
+	var once sync.Once
+	return func() {
+		once.Do(func() {
+			signal.Stop(ch)
+			close(done)
+		})
+	}
 }
 
 // persistentPreRun initializes the logger and writer for use by all commands.

@@ -212,6 +212,74 @@ func TestExecute(t *testing.T) {
 	}
 }
 
+func TestExecuteContext(t *testing.T) {
+	var buf bytes.Buffer
+	c := NewCLI("1.0.0", "abc123", "2026-01-01T00:00:00Z")
+	c.rootCmd.SetOut(&buf)
+	c.rootCmd.SetErr(&buf)
+	c.rootCmd.SetArgs([]string{"--help"})
+
+	ctx := context.Background()
+	if err := c.ExecuteContext(ctx); err != nil {
+		t.Fatalf("unexpected error running ExecuteContext: %v", err)
+	}
+
+	output := buf.String()
+	if !strings.Contains(output, "pvtr root command") {
+		t.Errorf("expected output to contain 'pvtr root command', got: %s", output)
+	}
+}
+
+type cliTestContextKey struct{}
+
+func TestExecuteContext_PropagatesContext(t *testing.T) {
+	var buf bytes.Buffer
+	c := NewCLI("1.0.0", "abc123", "2026-01-01T00:00:00Z")
+	c.rootCmd.SetOut(&buf)
+	c.rootCmd.SetErr(&buf)
+	c.rootCmd.SetArgs([]string{"run"})
+
+	origRunFn := runFn
+	defer func() { runFn = origRunFn }()
+
+	var receivedCtx context.Context
+	runFn = func(ctx context.Context, c *CLI) int {
+		receivedCtx = ctx
+		return 0
+	}
+
+	ctx := context.WithValue(context.Background(), cliTestContextKey{}, "cli-context-val")
+	if err := c.ExecuteContext(ctx); err != nil {
+		t.Fatalf("unexpected error in ExecuteContext: %v", err)
+	}
+
+	if receivedCtx == nil {
+		t.Fatal("expected runFn to receive context from ExecuteContext, got nil")
+	}
+	if val, ok := receivedCtx.Value(cliTestContextKey{}).(string); !ok || val != "cli-context-val" {
+		t.Errorf("expected context value 'cli-context-val', got %v", val)
+	}
+}
+
+func TestSetupCloseHandler_CleanupIdempotent(t *testing.T) {
+	c := NewCLI("1.0.0", "abc123", "2026-01-01T00:00:00Z")
+	cleanup := c.setupCloseHandler()
+	if cleanup == nil {
+		t.Fatal("expected cleanup function to be non-nil")
+	}
+
+	// Calling cleanup stops signal notifications and closes the done channel.
+	cleanup()
+
+	// Calling cleanup a second time must be safe and idempotent (no panic on closed channel).
+	defer func() {
+		if r := recover(); r != nil {
+			t.Errorf("unexpected panic on second cleanup call: %v", r)
+		}
+	}()
+	cleanup()
+}
+
 func TestDefaultBinariesPath_NoHome(t *testing.T) {
 	if runtime.GOOS == "windows" {
 		t.Skip("HOME environment variable is not used on Windows")
