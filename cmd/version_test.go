@@ -50,3 +50,19 @@ func TestVersionCmd_Verbose(t *testing.T) {
 		}
 	}
 }
+
+func TestVersionCmd_NoArgsRejectsPositionalArgs(t *testing.T) {
+	var buf bytes.Buffer
+	c := newTestCLI(&buf, "1.2.3", "a1b2c3d", "2026-01-01T00:00:00Z")
+	c.addVersionCmd()
+
+	c.rootCmd.SetArgs([]string{"version", "unexpected-arg"})
+	err := c.rootCmd.Execute()
+	if err == nil {
+		t.Fatal("expected version command with extra positional arguments to fail")
+	}
+	if !strings.Contains(err.Error(), `unknown command "unexpected-arg" for "pvtr version"`) {
+		t.Errorf("expected error message to indicate unknown command violation, got: %v", err)
+	}
+}
+

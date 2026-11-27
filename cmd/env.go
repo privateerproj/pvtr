@@ -19,6 +19,7 @@ func (c *CLI) addEnvCmd() {
 	envCmd := &cobra.Command{
 		Use:     "env",
 		Aliases: []string{"info"},
+		Args:    cobra.NoArgs,
 		Short:   "Display runtime environment details.",
 		Long:    `Display the binary path, config location, plugins directory, installed plugins, version, and build information.`,
 		Run: func(cmd *cobra.Command, args []string) {
